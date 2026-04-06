@@ -480,6 +480,26 @@
   line-height: 1.3;
 }
 
+/* Empty Cart */
+.checkout__empty {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  min-height: 50vh;
+  gap: var(--space-4);
+  text-align: center;
+}
+.checkout__empty h2 {
+  font-family: var(--font-headline);
+  font-weight: 700;
+  font-size: 1.5rem;
+}
+.checkout__empty p {
+  color: var(--on-surface-variant);
+  margin-bottom: var(--space-4);
+}
+
 @media (max-width: 1024px) {
   .checkout__grid { grid-template-columns: 1fr; }
   .checkout__forms { grid-template-columns: 1fr; }

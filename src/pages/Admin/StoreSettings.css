@@ -1,0 +1,97 @@
+.store-settings__header { margin-bottom: var(--space-8); }
+.store-settings__title {
+  font-family: var(--font-headline);
+  font-size: 2rem;
+  font-weight: 900;
+  letter-spacing: -0.03em;
+}
+.store-settings__subtitle { color: var(--on-surface-variant); font-size: 0.875rem; margin-top: 2px; }
+
+.store-settings__form {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-8);
+  max-width: 48rem;
+}
+.store-settings__card {
+  background: var(--surface-container-lowest);
+  padding: var(--space-8);
+  border-radius: var(--radius-xl);
+  box-shadow: var(--shadow-sm);
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-6);
+}
+.store-settings__section-title {
+  font-family: var(--font-headline);
+  font-weight: 700;
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  padding-bottom: var(--space-4);
+  border-bottom: 1px solid var(--surface-container);
+}
+
+.ss-field label {
+  display: block;
+  font-size: 0.75rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  color: var(--on-surface-variant);
+  margin-bottom: var(--space-2);
+}
+.ss-field input,
+.ss-field textarea {
+  width: 100%;
+  background: var(--surface-container);
+  border: 2px solid transparent;
+  padding: var(--space-3) var(--space-4);
+  border-radius: var(--radius-md);
+  font-size: 0.875rem;
+  outline: none;
+  transition: border-color var(--transition-base);
+  font-family: var(--font-body);
+}
+.ss-field input:focus,
+.ss-field textarea:focus {
+  border-color: var(--primary);
+}
+.ss-field__row {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: var(--space-6);
+}
+
+.store-settings__actions {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: var(--space-4);
+}
+.store-settings__saved {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  color: #16a34a;
+  font-weight: 600;
+  font-size: 0.875rem;
+  animation: fadeIn 0.3s ease;
+}
+.store-settings__save-btn {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  background: var(--primary);
+  color: #fff;
+  padding: var(--space-3) var(--space-8);
+  border-radius: var(--radius-md);
+  font-weight: 700;
+  transition: transform var(--transition-base), box-shadow var(--transition-base);
+}
+.store-settings__save-btn:hover { transform: translateY(-2px); box-shadow: var(--shadow-lg); }
+
+@media (max-width: 640px) {
+  .ss-field__row { grid-template-columns: 1fr; }
+  .store-settings__card { padding: var(--space-6); }
+}

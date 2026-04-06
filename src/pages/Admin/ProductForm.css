@@ -1,0 +1,169 @@
+.product-form__header { margin-bottom: var(--space-8); }
+.product-form__back {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  color: var(--on-surface-variant);
+  font-weight: 600;
+  font-size: 0.875rem;
+  margin-bottom: var(--space-4);
+  transition: color var(--transition-base);
+}
+.product-form__back:hover { color: var(--primary); }
+.product-form__title {
+  font-family: var(--font-headline);
+  font-size: 2rem;
+  font-weight: 900;
+  letter-spacing: -0.03em;
+}
+
+.product-form__grid {
+  display: grid;
+  grid-template-columns: 2fr 1fr;
+  gap: var(--space-8);
+}
+.product-form__fields {
+  background: var(--surface-container-lowest);
+  padding: var(--space-8);
+  border-radius: var(--radius-xl);
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-6);
+}
+
+/* Fields */
+.pf-field label {
+  display: block;
+  font-size: 0.75rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  color: var(--on-surface-variant);
+  margin-bottom: var(--space-2);
+}
+.pf-field input,
+.pf-field select,
+.pf-field textarea {
+  width: 100%;
+  background: var(--surface-container);
+  border: 2px solid transparent;
+  padding: var(--space-3) var(--space-4);
+  border-radius: var(--radius-md);
+  font-size: 0.875rem;
+  outline: none;
+  transition: border-color var(--transition-base);
+  font-family: var(--font-body);
+}
+.pf-field input:focus,
+.pf-field select:focus,
+.pf-field textarea:focus {
+  border-color: var(--primary);
+}
+.pf-field--error input,
+.pf-field--error select {
+  border-color: #dc2626;
+}
+.pf-field__error {
+  color: #dc2626;
+  font-size: 0.75rem;
+  margin-top: 4px;
+  display: block;
+}
+.pf-field__row {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: var(--space-6);
+}
+
+/* Preview */
+.product-form__preview {
+  position: sticky;
+  top: var(--space-8);
+}
+.product-form__preview-title {
+  font-family: var(--font-headline);
+  font-weight: 700;
+  margin-bottom: var(--space-4);
+}
+.product-form__preview-card {
+  background: var(--surface-container-lowest);
+  border-radius: var(--radius-xl);
+  overflow: hidden;
+  box-shadow: var(--shadow-md);
+}
+.product-form__preview-img {
+  width: 100%;
+  height: 14rem;
+  object-fit: cover;
+}
+.product-form__preview-placeholder {
+  width: 100%;
+  height: 14rem;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  background: var(--surface-container);
+  color: var(--on-surface-variant);
+}
+.product-form__preview-placeholder .material-symbols-outlined {
+  font-size: 3rem;
+  margin-bottom: var(--space-2);
+}
+.product-form__preview-info {
+  padding: var(--space-6);
+}
+.product-form__preview-sport {
+  font-size: 0.75rem;
+  font-weight: 700;
+  color: var(--on-surface-variant);
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  margin-bottom: var(--space-2);
+}
+.product-form__preview-info h4 {
+  font-family: var(--font-headline);
+  font-weight: 700;
+  font-size: 1.125rem;
+  margin-bottom: var(--space-2);
+}
+.product-form__preview-price {
+  color: var(--primary);
+  font-weight: 900;
+  font-size: 1.25rem;
+}
+
+/* Actions */
+.product-form__actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: var(--space-4);
+  margin-top: var(--space-8);
+}
+.product-form__cancel {
+  padding: var(--space-3) var(--space-8);
+  border-radius: var(--radius-md);
+  font-weight: 700;
+  background: var(--surface-container);
+  transition: background var(--transition-base);
+}
+.product-form__cancel:hover { background: var(--surface-container-high); }
+.product-form__save {
+  padding: var(--space-3) var(--space-8);
+  border-radius: var(--radius-md);
+  font-weight: 700;
+  background: var(--primary);
+  color: #fff;
+  transition: transform var(--transition-base), box-shadow var(--transition-base);
+}
+.product-form__save:hover:not(:disabled) {
+  transform: translateY(-2px);
+  box-shadow: var(--shadow-lg);
+}
+.product-form__save:disabled { opacity: 0.7; cursor: wait; }
+
+@media (max-width: 768px) {
+  .product-form__grid { grid-template-columns: 1fr; }
+  .pf-field__row { grid-template-columns: 1fr; }
+  .product-form__preview { position: static; }
+}

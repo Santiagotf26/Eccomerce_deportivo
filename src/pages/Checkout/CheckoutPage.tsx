@@ -1,15 +1,29 @@
 import { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
+import { useCart } from '../../context/CartContext';
 import './CheckoutPage.css';
 
 export default function CheckoutPage() {
-  const [quantity, setQuantity] = useState(1);
+  const navigate = useNavigate();
+  const { items, totalPrice, updateQuantity, removeFromCart } = useCart();
   const [paymentMethod, setPaymentMethod] = useState<'card' | 'paypal' | 'apple'>('card');
   const [sameAsShipping, setSameAsShipping] = useState(true);
 
-  const productPrice = 189.00;
-  const enrollmentFee = 450.00;
-  const taxes = 28.50;
-  const total = productPrice * quantity + enrollmentFee + taxes;
+  const taxes = totalPrice * 0.04;
+  const total = totalPrice + taxes;
+
+  if (items.length === 0) {
+    return (
+      <main className="checkout">
+        <div className="checkout__empty">
+          <span className="material-symbols-outlined" style={{ fontSize: '4rem', color: 'var(--on-surface-variant)' }}>shopping_cart</span>
+          <h2>Tu carrito está vacío</h2>
+          <p>Agrega productos desde nuestro catálogo para continuar.</p>
+          <button className="btn btn--primary btn--lg" onClick={() => navigate('/catalog')}>Ir al Catálogo</button>
+        </div>
+      </main>
+    );
+  }
 
   return (
     <main className="checkout">
@@ -19,66 +33,44 @@ export default function CheckoutPage() {
       </header>
 
       <div className="checkout__grid">
-        {/* Left Column */}
         <div className="checkout__left">
-          {/* Cart Items */}
           <section className="checkout__section">
-            <h2 className="checkout__section-title">Tu Selección</h2>
+            <h2 className="checkout__section-title">Tu Selección ({items.length} artículo{items.length > 1 ? 's' : ''})</h2>
             <div className="checkout__items">
-              {/* Product Item */}
-              <div className="cart-item">
-                <div className="cart-item__image">
-                  <img src="https://lh3.googleusercontent.com/aida-public/AB6AXuA3aI6uaJG3SDckLWIjDsygObsuNQu6GwFalM09_cOBTmP-dz8_A8pTwNBPrV--2VJEMkrgKdB8rDDQburIQVdrdNOi2bc79KYylSGXdmw0-ilgEw0RX-NATwqAtfSmgNcfFYi4c-HKsBiooBC4D0ceiHViYFYd23rrDL9l6RzKpv060RbSq95DKbNFMGHKPZiMZSZi5dh7LzJmEiWEuzAY_gwkMWmePJZeUhn13CS_8HCNOKetRXIh0zkxnrKwdC-98XmWzAusATo" alt="Botas Kinetic Pro Strike" />
-                </div>
-                <div className="cart-item__details">
-                  <div className="cart-item__top">
-                    <h3 className="cart-item__name">Botas Kinetic Pro Strike</h3>
-                    <span className="cart-item__price">${(productPrice * quantity).toFixed(2)}</span>
+              {items.map(item => (
+                <div className="cart-item" key={item.product.id}>
+                  <div className="cart-item__image">
+                    <img src={item.product.image} alt={item.product.name} />
                   </div>
-                  <p className="cart-item__desc">Ingeniería de precisión para delanteros de élite. Parte superior sintética aerodinámica con sistema de tracción adaptable.</p>
-                  <div className="cart-item__controls">
-                    <div className="quantity-control">
-                      <button onClick={() => setQuantity(Math.max(1, quantity - 1))}>
-                        <span className="material-symbols-outlined qty-icon">remove</span>
-                      </button>
-                      <span className="quantity-control__value">{quantity}</span>
-                      <button onClick={() => setQuantity(quantity + 1)}>
-                        <span className="material-symbols-outlined qty-icon">add</span>
+                  <div className="cart-item__details">
+                    <div className="cart-item__top">
+                      <div>
+                        <h3 className="cart-item__name">{item.product.name}</h3>
+                        {item.size && <span className="cart-item__tag">Talla {item.size}</span>}
+                      </div>
+                      <span className="cart-item__price">${(item.product.price * item.quantity).toFixed(2)}</span>
+                    </div>
+                    {item.product.description && <p className="cart-item__desc">{item.product.description}</p>}
+                    <div className="cart-item__controls">
+                      <div className="quantity-control">
+                        <button onClick={() => updateQuantity(item.product.id, item.quantity - 1)}>
+                          <span className="material-symbols-outlined qty-icon">remove</span>
+                        </button>
+                        <span className="quantity-control__value">{item.quantity}</span>
+                        <button onClick={() => updateQuantity(item.product.id, item.quantity + 1)}>
+                          <span className="material-symbols-outlined qty-icon">add</span>
+                        </button>
+                      </div>
+                      <button className="cart-item__remove" onClick={() => removeFromCart(item.product.id)}>
+                        <span className="material-symbols-outlined">delete</span> Eliminar
                       </button>
                     </div>
-                    <button className="cart-item__remove">
-                      <span className="material-symbols-outlined">delete</span> Eliminar
-                    </button>
                   </div>
                 </div>
-              </div>
-
-              {/* Enrollment Item */}
-              <div className="cart-item">
-                <div className="cart-item__image cart-item__image--enrollment">
-                  <span className="cart-item__enrollment-badge">SS'24</span>
-                </div>
-                <div className="cart-item__details">
-                  <div className="cart-item__top">
-                    <div>
-                      <h3 className="cart-item__name">Inscripción en la Academia</h3>
-                      <span className="cart-item__tag">Intensivo de Verano</span>
-                    </div>
-                    <span className="cart-item__price">$450.00</span>
-                  </div>
-                  <p className="cart-item__desc">Jugador: Leo Martinez (U-14 Elite). Residencia táctica de 8 semanas y sesión de análisis de rendimiento.</p>
-                  <div className="cart-item__controls">
-                    <span className="cart-item__fixed">Suscripción Fija</span>
-                    <button className="cart-item__remove cart-item__remove--cancel">
-                      <span className="material-symbols-outlined">cancel</span> Cancelar
-                    </button>
-                  </div>
-                </div>
-              </div>
+              ))}
             </div>
           </section>
 
-          {/* Shipping & Billing */}
           <section className="checkout__forms">
             <div className="form-card">
               <h2 className="form-card__title">
@@ -88,7 +80,7 @@ export default function CheckoutPage() {
               <div className="form-card__fields">
                 <div className="form-field">
                   <label className="form-field__label">Nombre Completo</label>
-                  <input type="text" className="form-field__input" defaultValue="Leo Martinez" />
+                  <input type="text" className="form-field__input" placeholder="Tu nombre" />
                 </div>
                 <div className="form-field">
                   <label className="form-field__label">Calle y Número</label>
@@ -126,7 +118,6 @@ export default function CheckoutPage() {
             </div>
           </section>
 
-          {/* Payment Method */}
           <section className="checkout__section">
             <h2 className="checkout__section-title">Método de Pago</h2>
             <div className="payment-methods">
@@ -151,10 +142,7 @@ export default function CheckoutPage() {
                   <label className="form-field__label">Número de Tarjeta</label>
                   <div className="card-form__input-wrap">
                     <input type="text" className="form-field__input" placeholder="0000 0000 0000 0000" />
-                    <div className="card-form__brands">
-                      <div className="card-form__brand" />
-                      <div className="card-form__brand card-form__brand--alt" />
-                    </div>
+                    <div className="card-form__brands"><div className="card-form__brand" /><div className="card-form__brand card-form__brand--alt" /></div>
                   </div>
                 </div>
                 <div className="form-field__row">
@@ -172,7 +160,6 @@ export default function CheckoutPage() {
           </section>
         </div>
 
-        {/* Right Column: Summary */}
         <div className="checkout__right">
           <div className="order-summary">
             <div className="order-summary__glow" />
@@ -180,28 +167,22 @@ export default function CheckoutPage() {
               <h2 className="order-summary__title">Resumen del Pedido</h2>
               <div className="order-summary__lines">
                 <div className="order-summary__line">
-                  <span>Productos ({quantity})</span>
-                  <span className="order-summary__amount">${(productPrice * quantity).toFixed(2)}</span>
-                </div>
-                <div className="order-summary__line">
-                  <span>Cuota de Inscripción</span>
-                  <span className="order-summary__amount">$450.00</span>
+                  <span>Productos ({items.reduce((s, i) => s + i.quantity, 0)})</span>
+                  <span className="order-summary__amount">${totalPrice.toFixed(2)}</span>
                 </div>
                 <div className="order-summary__line">
                   <span>Envío</span>
                   <span className="order-summary__amount order-summary__amount--free">GRATIS</span>
                 </div>
                 <div className="order-summary__line">
-                  <span>Impuestos</span>
-                  <span className="order-summary__amount">$28.50</span>
+                  <span>Impuestos (4%)</span>
+                  <span className="order-summary__amount">${taxes.toFixed(2)}</span>
                 </div>
               </div>
-
               <div className="order-summary__total">
                 <span className="order-summary__total-label">Total</span>
                 <span className="order-summary__total-value">${total.toFixed(2)}</span>
               </div>
-
               <div className="order-summary__actions">
                 <button className="order-summary__place-btn">Realizar Pedido</button>
                 <p className="order-summary__terms">
@@ -209,21 +190,16 @@ export default function CheckoutPage() {
                   <a href="#">Términos de Servicio</a> y <a href="#">Política de la Academia</a>
                 </p>
               </div>
-
               <div className="order-summary__trust">
                 <div className="trust-item">
-                  <div className="trust-item__icon">
-                    <span className="material-symbols-outlined">verified_user</span>
-                  </div>
+                  <div className="trust-item__icon"><span className="material-symbols-outlined">verified_user</span></div>
                   <div>
                     <p className="trust-item__title">Pago Seguro</p>
                     <p className="trust-item__desc">Transacción encriptada SSL</p>
                   </div>
                 </div>
                 <div className="trust-item">
-                  <div className="trust-item__icon">
-                    <span className="material-symbols-outlined">undo</span>
-                  </div>
+                  <div className="trust-item__icon"><span className="material-symbols-outlined">undo</span></div>
                   <div>
                     <p className="trust-item__title">Devoluciones en 30 Días</p>
                     <p className="trust-item__desc">Excluye inscripciones de academia</p>
@@ -237,4 +213,3 @@ export default function CheckoutPage() {
     </main>
   );
 }
-

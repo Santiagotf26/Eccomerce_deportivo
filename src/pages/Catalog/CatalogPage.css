@@ -315,7 +315,25 @@
   transition: background var(--transition-base);
 }
 .product-card__add-btn:hover { background: var(--primary); }
+.product-card__add-btn--added { background: var(--tertiary) !important; }
 .product-card__add-btn .material-symbols-outlined { font-size: 1.125rem; }
+
+/* Empty / Loading */
+.catalog__loading {
+  display: flex;
+  justify-content: center;
+  padding: var(--space-20) 0;
+}
+.catalog__empty {
+  grid-column: 1 / -1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--space-4);
+  padding: var(--space-20) 0;
+  color: var(--on-surface-variant);
+  text-align: center;
+}
 
 /* === Bottom Banner === */
 .catalog-banner {

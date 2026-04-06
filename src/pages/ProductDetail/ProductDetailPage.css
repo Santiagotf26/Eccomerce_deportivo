@@ -140,6 +140,38 @@
   cursor: not-allowed;
 }
 
+/* Quantity */
+.detail__quantity { margin-top: var(--space-2); }
+.detail__quantity-controls {
+  display: flex;
+  align-items: center;
+  background: var(--surface-container);
+  border-radius: var(--radius-full);
+  width: fit-content;
+}
+.detail__quantity-controls button {
+  padding: var(--space-3);
+  transition: color var(--transition-base);
+}
+.detail__quantity-controls button:hover { color: var(--primary); }
+.detail__quantity-controls span {
+  padding: 0 var(--space-6);
+  font-weight: 700;
+  font-size: 1rem;
+}
+
+/* Add-to-cart feedback */
+.detail__add-btn--added {
+  background: var(--tertiary) !important;
+  border-color: var(--tertiary) !important;
+}
+
+.detail__description {
+  color: var(--on-surface-variant);
+  line-height: 1.7;
+  max-width: 32rem;
+}
+
 .detail__actions {
   display: flex;
   flex-direction: column;
