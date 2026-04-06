@@ -14,8 +14,8 @@ export default function CheckoutPage() {
   return (
     <main className="checkout">
       <header className="checkout__header">
-        <h1 className="checkout__title">Checkout</h1>
-        <p className="checkout__subtitle">Review your gear and finalize your momentum</p>
+        <h1 className="checkout__title">Pago</h1>
+        <p className="checkout__subtitle">Revisa tu equipo y finaliza tu impulso</p>
       </header>
 
       <div className="checkout__grid">
@@ -23,19 +23,19 @@ export default function CheckoutPage() {
         <div className="checkout__left">
           {/* Cart Items */}
           <section className="checkout__section">
-            <h2 className="checkout__section-title">Your Selection</h2>
+            <h2 className="checkout__section-title">Tu Selección</h2>
             <div className="checkout__items">
               {/* Product Item */}
               <div className="cart-item">
                 <div className="cart-item__image">
-                  <img src="https://lh3.googleusercontent.com/aida-public/AB6AXuA3aI6uaJG3SDckLWIjDsygObsuNQu6GwFalM09_cOBTmP-dz8_A8pTwNBPrV--2VJEMkrgKdB8rDDQburIQVdrdNOi2bc79KYylSGXdmw0-ilgEw0RX-NATwqAtfSmgNcfFYi4c-HKsBiooBC4D0ceiHViYFYd23rrDL9l6RzKpv060RbSq95DKbNFMGHKPZiMZSZi5dh7LzJmEiWEuzAY_gwkMWmePJZeUhn13CS_8HCNOKetRXIh0zkxnrKwdC-98XmWzAusATo" alt="Kinetic Pro Strike Boots" />
+                  <img src="https://lh3.googleusercontent.com/aida-public/AB6AXuA3aI6uaJG3SDckLWIjDsygObsuNQu6GwFalM09_cOBTmP-dz8_A8pTwNBPrV--2VJEMkrgKdB8rDDQburIQVdrdNOi2bc79KYylSGXdmw0-ilgEw0RX-NATwqAtfSmgNcfFYi4c-HKsBiooBC4D0ceiHViYFYd23rrDL9l6RzKpv060RbSq95DKbNFMGHKPZiMZSZi5dh7LzJmEiWEuzAY_gwkMWmePJZeUhn13CS_8HCNOKetRXIh0zkxnrKwdC-98XmWzAusATo" alt="Botas Kinetic Pro Strike" />
                 </div>
                 <div className="cart-item__details">
                   <div className="cart-item__top">
-                    <h3 className="cart-item__name">Kinetic Pro Strike Boots</h3>
+                    <h3 className="cart-item__name">Botas Kinetic Pro Strike</h3>
                     <span className="cart-item__price">${(productPrice * quantity).toFixed(2)}</span>
                   </div>
-                  <p className="cart-item__desc">Precision engineered for elite strikers. Aerodynamic synthetic upper with adaptive traction system.</p>
+                  <p className="cart-item__desc">Ingeniería de precisión para delanteros de élite. Parte superior sintética aerodinámica con sistema de tracción adaptable.</p>
                   <div className="cart-item__controls">
                     <div className="quantity-control">
                       <button onClick={() => setQuantity(Math.max(1, quantity - 1))}>
@@ -47,7 +47,7 @@ export default function CheckoutPage() {
                       </button>
                     </div>
                     <button className="cart-item__remove">
-                      <span className="material-symbols-outlined">delete</span> Remove
+                      <span className="material-symbols-outlined">delete</span> Eliminar
                     </button>
                   </div>
                 </div>
@@ -61,16 +61,16 @@ export default function CheckoutPage() {
                 <div className="cart-item__details">
                   <div className="cart-item__top">
                     <div>
-                      <h3 className="cart-item__name">Academy Enrollment</h3>
-                      <span className="cart-item__tag">Summer Intensive</span>
+                      <h3 className="cart-item__name">Inscripción en la Academia</h3>
+                      <span className="cart-item__tag">Intensivo de Verano</span>
                     </div>
                     <span className="cart-item__price">$450.00</span>
                   </div>
-                  <p className="cart-item__desc">Player: Leo Martinez (U-14 Elite). 8-week tactical residency and performance analysis session.</p>
+                  <p className="cart-item__desc">Jugador: Leo Martinez (U-14 Elite). Residencia táctica de 8 semanas y sesión de análisis de rendimiento.</p>
                   <div className="cart-item__controls">
-                    <span className="cart-item__fixed">Subscription Fixed</span>
+                    <span className="cart-item__fixed">Suscripción Fija</span>
                     <button className="cart-item__remove cart-item__remove--cancel">
-                      <span className="material-symbols-outlined">cancel</span> Cancel
+                      <span className="material-symbols-outlined">cancel</span> Cancelar
                     </button>
                   </div>
                 </div>
@@ -83,25 +83,25 @@ export default function CheckoutPage() {
             <div className="form-card">
               <h2 className="form-card__title">
                 <span className="material-symbols-outlined form-icon">local_shipping</span>
-                Shipping Address
+                Dirección de Envío
               </h2>
               <div className="form-card__fields">
                 <div className="form-field">
-                  <label className="form-field__label">Full Name</label>
+                  <label className="form-field__label">Nombre Completo</label>
                   <input type="text" className="form-field__input" defaultValue="Leo Martinez" />
                 </div>
                 <div className="form-field">
-                  <label className="form-field__label">Street Address</label>
-                  <input type="text" className="form-field__input" placeholder="123 Pitch Ave" />
+                  <label className="form-field__label">Calle y Número</label>
+                  <input type="text" className="form-field__input" placeholder="Calle del Campo 123" />
                 </div>
                 <div className="form-field__row">
                   <div className="form-field">
-                    <label className="form-field__label">City</label>
-                    <input type="text" className="form-field__input" placeholder="London" />
+                    <label className="form-field__label">Ciudad</label>
+                    <input type="text" className="form-field__input" placeholder="Madrid" />
                   </div>
                   <div className="form-field">
-                    <label className="form-field__label">Postcode</label>
-                    <input type="text" className="form-field__input" placeholder="SW1 1AA" />
+                    <label className="form-field__label">Código Postal</label>
+                    <input type="text" className="form-field__input" placeholder="28001" />
                   </div>
                 </div>
               </div>
@@ -111,11 +111,11 @@ export default function CheckoutPage() {
               <div className="form-card__header">
                 <h2 className="form-card__title">
                   <span className="material-symbols-outlined form-icon">payments</span>
-                  Billing Info
+                  Información de Facturación
                 </h2>
                 <label className="form-card__toggle">
                   <input type="checkbox" checked={sameAsShipping} onChange={() => setSameAsShipping(!sameAsShipping)} />
-                  <span className="form-card__toggle-text">Same as shipping</span>
+                  <span className="form-card__toggle-text">Igual que el envío</span>
                 </label>
               </div>
               <div className={`form-card__placeholders ${sameAsShipping ? 'form-card__placeholders--disabled' : ''}`}>
@@ -128,11 +128,11 @@ export default function CheckoutPage() {
 
           {/* Payment Method */}
           <section className="checkout__section">
-            <h2 className="checkout__section-title">Payment Method</h2>
+            <h2 className="checkout__section-title">Método de Pago</h2>
             <div className="payment-methods">
               <div className={`payment-method ${paymentMethod === 'card' ? 'payment-method--active' : ''}`} onClick={() => setPaymentMethod('card')}>
                 <span className="material-symbols-outlined payment-method__icon">credit_card</span>
-                <span className="payment-method__label">Credit Card</span>
+                <span className="payment-method__label">Tarjeta de Crédito</span>
                 {paymentMethod === 'card' && <span className="material-symbols-outlined payment-method__check">check_circle</span>}
               </div>
               <div className={`payment-method ${paymentMethod === 'paypal' ? 'payment-method--active' : ''}`} onClick={() => setPaymentMethod('paypal')}>
@@ -148,7 +148,7 @@ export default function CheckoutPage() {
             {paymentMethod === 'card' && (
               <div className="card-form">
                 <div className="form-field">
-                  <label className="form-field__label">Card Number</label>
+                  <label className="form-field__label">Número de Tarjeta</label>
                   <div className="card-form__input-wrap">
                     <input type="text" className="form-field__input" placeholder="0000 0000 0000 0000" />
                     <div className="card-form__brands">
@@ -159,8 +159,8 @@ export default function CheckoutPage() {
                 </div>
                 <div className="form-field__row">
                   <div className="form-field">
-                    <label className="form-field__label">Expiry Date</label>
-                    <input type="text" className="form-field__input" placeholder="MM / YY" />
+                    <label className="form-field__label">Fecha de Vencimiento</label>
+                    <input type="text" className="form-field__input" placeholder="MM / AA" />
                   </div>
                   <div className="form-field">
                     <label className="form-field__label">CVC / CVV</label>
@@ -177,22 +177,22 @@ export default function CheckoutPage() {
           <div className="order-summary">
             <div className="order-summary__glow" />
             <div className="order-summary__content">
-              <h2 className="order-summary__title">Order Summary</h2>
+              <h2 className="order-summary__title">Resumen del Pedido</h2>
               <div className="order-summary__lines">
                 <div className="order-summary__line">
-                  <span>Products ({quantity})</span>
+                  <span>Productos ({quantity})</span>
                   <span className="order-summary__amount">${(productPrice * quantity).toFixed(2)}</span>
                 </div>
                 <div className="order-summary__line">
-                  <span>Enrollment Fee</span>
+                  <span>Cuota de Inscripción</span>
                   <span className="order-summary__amount">$450.00</span>
                 </div>
                 <div className="order-summary__line">
-                  <span>Shipping</span>
-                  <span className="order-summary__amount order-summary__amount--free">FREE</span>
+                  <span>Envío</span>
+                  <span className="order-summary__amount order-summary__amount--free">GRATIS</span>
                 </div>
                 <div className="order-summary__line">
-                  <span>Taxes</span>
+                  <span>Impuestos</span>
                   <span className="order-summary__amount">$28.50</span>
                 </div>
               </div>
@@ -203,10 +203,10 @@ export default function CheckoutPage() {
               </div>
 
               <div className="order-summary__actions">
-                <button className="order-summary__place-btn">Place Order</button>
+                <button className="order-summary__place-btn">Realizar Pedido</button>
                 <p className="order-summary__terms">
-                  By clicking place order you agree to our <br />
-                  <a href="#">Terms of Service</a> & <a href="#">Academy Policy</a>
+                  Al hacer clic en realizar pedido, aceptas nuestros <br />
+                  <a href="#">Términos de Servicio</a> y <a href="#">Política de la Academia</a>
                 </p>
               </div>
 
@@ -216,8 +216,8 @@ export default function CheckoutPage() {
                     <span className="material-symbols-outlined">verified_user</span>
                   </div>
                   <div>
-                    <p className="trust-item__title">Secure Checkout</p>
-                    <p className="trust-item__desc">SSL encrypted transaction</p>
+                    <p className="trust-item__title">Pago Seguro</p>
+                    <p className="trust-item__desc">Transacción encriptada SSL</p>
                   </div>
                 </div>
                 <div className="trust-item">
@@ -225,8 +225,8 @@ export default function CheckoutPage() {
                     <span className="material-symbols-outlined">undo</span>
                   </div>
                   <div>
-                    <p className="trust-item__title">30-Day Returns</p>
-                    <p className="trust-item__desc">Excludes academy enrollments</p>
+                    <p className="trust-item__title">Devoluciones en 30 Días</p>
+                    <p className="trust-item__desc">Excluye inscripciones de academia</p>
                   </div>
                 </div>
               </div>
@@ -237,3 +237,4 @@ export default function CheckoutPage() {
     </main>
   );
 }
+

@@ -12,34 +12,34 @@ export default function HomePage() {
         <div className="hero__bg">
           <img
             src="https://lh3.googleusercontent.com/aida-public/AB6AXuAXeFKa7XeJuT5QeEHjdXY3tdNd1VztnPerkXmeKRmMFRItqZWrYTQuBpyP1v41XX-vEY7gWiO7A54XTVdzThrl4KVNqBBysqOddqfIk61EN10cYM_ae4ixmU2QZlRRXu4FmA491ERzGJ5YTcvTEcjuD0uYYbQ2kwshZVAupFRXgxxzEvEjMHn-Xldmywg_j5SU3ooR54BwD3c4Gm_CaGyyZiZ4LCqtiexgCNmsUJURMXRbpIGtwN91fAfQ3Z7A5DSOWZ4oy0LwZRM"
-            alt="Soccer player striking ball under stadium lights"
+            alt="Jugador de fútbol pateando el balón bajo las luces del estadio"
             className="hero__img"
           />
           <div className="hero__gradient" />
         </div>
         <div className="hero__content">
-          <span className="hero__badge">Season 24/25 Active</span>
-          <h1 className="hero__title">UNLEASH<br />THE MOMENTUM.</h1>
+          <span className="hero__badge">Temporada 24/25 Activa</span>
+          <h1 className="hero__title">DESATA<br />EL IMPULSO.</h1>
           <p className="hero__subtitle">
-            Elite performance gear engineered for the pitch, paired with world-class coaching from the KINETIC Soccer School.
+            Equipación de alto rendimiento diseñada para el campo, combinada con entrenamiento de clase mundial de la Escuela de Fútbol KINETIC.
           </p>
           <div className="hero__actions">
             <button className="btn btn--primary btn--lg" onClick={() => navigate('/catalog')}>
-              Shop Performance Gear
+              Comprar Equipación de Rendimiento
             </button>
             <button className="btn btn--ghost btn--lg" onClick={() => navigate('/academy')}>
-              Enroll in Academy
+              Inscribirse en la Academia
             </button>
           </div>
         </div>
         <div className="hero__floating-card">
           <img
             src="https://lh3.googleusercontent.com/aida-public/AB6AXuAShqCOpP-0Zzb87aI8dgUwQVdvLRsRxs_gDctvECtvSV6CvNeIoUHmiXh7NoMbsYlwx4teTQc0RN1Voi17FZb93aqBKKjzIIAMV-rFqsI5e59i3TJm_o6vUj3k48K6FzAlvB5VIIYk3AfAErzTiF_V9_17o1lW_UStTpEJjM-2slNa0sz-vmgT9tZLCbiHtGpIWq9R7hjECjlPdETxOs6TeW2keook4NhjOafFbQIImMwzOJV_Knfx3y_-KRFDvAuK2FCVSeudjJM"
-            alt="AERO-V Core Ball"
+            alt="Balón AERO-V Core"
             className="hero__floating-img"
           />
-          <p className="hero__floating-name">AERO-V CORE BALL</p>
-          <p className="hero__floating-tag">New Arrival</p>
+          <p className="hero__floating-name">BALÓN AERO-V CORE</p>
+          <p className="hero__floating-tag">Novedad</p>
         </div>
       </section>
 
@@ -47,11 +47,11 @@ export default function HomePage() {
       <section className="featured">
         <div className="featured__header">
           <div>
-            <h2 className="section-title">Engineered for the 90'</h2>
-            <p className="section-subtitle">Professional grade equipment tested at the highest level.</p>
+            <h2 className="section-title">Diseñado para los 90'</h2>
+            <p className="section-subtitle">Equipamiento de grado profesional probado al más alto nivel.</p>
           </div>
           <a className="featured__view-all" onClick={() => navigate('/catalog')}>
-            View Catalog <span className="material-symbols-outlined">arrow_forward</span>
+            Ver Catálogo <span className="material-symbols-outlined">arrow_forward</span>
           </a>
         </div>
         <div className="featured__grid">
@@ -60,7 +60,7 @@ export default function HomePage() {
             <div className="featured__hero-info">
               <h3>{featuredProducts.hero.name}</h3>
               <p>{featuredProducts.hero.subtitle}</p>
-              <span className="featured__shop-label">Shop Now</span>
+              <span className="featured__shop-label">Comprar Ahora</span>
             </div>
           </div>
           <div className="featured__side">
@@ -85,48 +85,48 @@ export default function HomePage() {
             <div className="academy-promo__image-frame">
               <img
                 src="https://lh3.googleusercontent.com/aida-public/AB6AXuDc3s5WZzJvGrWpZW616sk--udjPB3RmsMnN64_nv_2x5YwToaTpNGMrLN7oi6VBL5S0E9w3CTypM-3_ibYDic26r1D8Xk-WhhcLIijONLq2_Lm6fsmeL0WSHbsOCpW3t--3r0d5CJTQMxH3I4LwjBs9V2rRo4aBlv5EjmnG766DHblKN2aKMUJ0xIBjVhpDqQQJU3dEkIgzuXD3_tQXC2g15lHE2rv5hBFs9jIbmvZ54RCNnsSyPd8ZP8U-YTetZ5PL0iTj1ggkVU"
-                alt="Coach teaching tactical positioning"
+                alt="Entrenador enseñando posicionamiento táctico"
               />
             </div>
             <div className="academy-promo__stat-card">
               <div className="academy-promo__stat-num">01.</div>
-              <p className="academy-promo__stat-title">Elite Tactical Instruction</p>
-              <p className="academy-promo__stat-desc">Coaching staff from top European leagues and professional academies.</p>
+              <p className="academy-promo__stat-title">Instrucción Táctica de Élite</p>
+              <p className="academy-promo__stat-desc">Personal de entrenamiento de las mejores ligas europeas y academias profesionales.</p>
             </div>
             <div className="academy-promo__blur-orb" />
           </div>
 
           <div className="academy-promo__text">
-            <span className="academy-promo__eyebrow">Kinetic Soccer School</span>
-            <h2 className="academy-promo__heading">WHERE PROS<br />ARE BORN.</h2>
+            <span className="academy-promo__eyebrow">Escuela de Fútbol Kinetic</span>
+            <h2 className="academy-promo__heading">DONDE NACEN<br />LOS PROS.</h2>
             <p className="academy-promo__body">
-              Our academy isn't just about drills; it's about developing the tactical intelligence and technical precision of the next generation. Join the 500+ athletes who have moved into professional systems.
+              Nuestra academia no se trata solo de ejercicios; se trata de desarrollar la inteligencia táctica y la precisión técnica de la próxima generación. Únete a los más de 500 atletas que han pasado a sistemas profesionales.
             </p>
             <ul className="academy-promo__features">
               <li>
                 <span className="material-symbols-outlined filled">check_circle</span>
                 <div>
-                  <p className="academy-promo__feature-title">UEFA Pro Licensed Staff</p>
-                  <p className="academy-promo__feature-desc">Expert guidance from the best in the game.</p>
+                  <p className="academy-promo__feature-title">Personal con Licencia UEFA Pro</p>
+                  <p className="academy-promo__feature-desc">Guía experta de los mejores en el juego.</p>
                 </div>
               </li>
               <li>
                 <span className="material-symbols-outlined filled">check_circle</span>
                 <div>
-                  <p className="academy-promo__feature-title">Advanced Video Analysis</p>
-                  <p className="academy-promo__feature-desc">Frame-by-frame breakdown of your performance.</p>
+                  <p className="academy-promo__feature-title">Análisis de Video Avanzado</p>
+                  <p className="academy-promo__feature-desc">Desglose fotograma a fotograma de tu rendimiento.</p>
                 </div>
               </li>
               <li>
                 <span className="material-symbols-outlined filled">check_circle</span>
                 <div>
-                  <p className="academy-promo__feature-title">Physiological Testing</p>
-                  <p className="academy-promo__feature-desc">Biometric tracking and personalized fitness plans.</p>
+                  <p className="academy-promo__feature-title">Pruebas Fisiológicas</p>
+                  <p className="academy-promo__feature-desc">Seguimiento biométrico y planes de fitness personalizados.</p>
                 </div>
               </li>
             </ul>
             <button className="btn btn--dark btn--round" onClick={() => navigate('/academy')}>
-              Reserve Your Trial Spot
+              Reserva tu Plaza de Prueba
               <span className="material-symbols-outlined">arrow_outward</span>
             </button>
           </div>
@@ -137,14 +137,14 @@ export default function HomePage() {
       <section className="testimonials">
         <div className="testimonials__inner">
           <div className="testimonials__header">
-            <h2 className="section-title">Proven<br />Impact.</h2>
+            <h2 className="section-title">Impacto<br />Probado.</h2>
             <div className="testimonials__bar" />
           </div>
           <div className="testimonials__quotes">
             <blockquote className="testimonials__quote">
               <span className="testimonials__mark">"</span>
               <p className="testimonials__text">
-                "The level of training here is comparable to my time at a professional academy in Spain. The equipment and the coaching are top-tier."
+                "El nivel de entrenamiento aquí es comparable al de una academia profesional en España. El equipamiento y el entrenamiento son de primer nivel."
               </p>
               <cite className="testimonials__cite">
                 <img
@@ -154,14 +154,14 @@ export default function HomePage() {
                 />
                 <div>
                   <p className="testimonials__name">Marco V.</p>
-                  <p className="testimonials__role">U19 National Team Prospect</p>
+                  <p className="testimonials__role">Prospecto de la Selección Nacional Sub-19</p>
                 </div>
               </cite>
             </blockquote>
             <blockquote className="testimonials__quote">
               <span className="testimonials__mark">"</span>
               <p className="testimonials__text">
-                "Finally found a brand that understands the kinetic requirements of high-speed play. The Velocity boots are game changers."
+                "Finalmente encontré una marca que entiende los requisitos cinéticos del juego de alta velocidad. Las botas Velocity cambian el juego."
               </p>
               <cite className="testimonials__cite">
                 <img
@@ -171,7 +171,7 @@ export default function HomePage() {
                 />
                 <div>
                   <p className="testimonials__name">David K.</p>
-                  <p className="testimonials__role">Professional Midfielder</p>
+                  <p className="testimonials__role">Centrocampista Profesional</p>
                 </div>
               </cite>
             </blockquote>
@@ -185,17 +185,17 @@ export default function HomePage() {
           <div className="final-cta__bg">
             <img
               src="https://lh3.googleusercontent.com/aida-public/AB6AXuAbj6swlDhI0gGj5rzIRRgmPLBec6Ij1btzMDvYxdyCbUcDlt-9tRbyvf3xLNfuMahiMjBHovv7wpT3cAsh1S2iIcA3LZLnnRmLGjMc1D22wJn3WLfdmtnnVQDJS-gKv9UFCyaBaJT7xAgEjnG4SZPdVgBZx4Yr5ttbGRvf_oeLzVdY9i8fIrX-mzWnu2skvbE5L4U-s12lHyEn3mNXeuqUmpPoSQijP-g08xPBcqM6tyiYqZPL607shWvxCrGxG-lyp_9KQKHFpto"
-              alt="Stadium grass texture"
+              alt="Textura de césped de estadio"
             />
           </div>
           <div className="final-cta__content">
-            <h2 className="final-cta__title">TAKE YOUR SHOT.</h2>
+            <h2 className="final-cta__title">HAZ TU MEJOR TIRO.</h2>
             <p className="final-cta__desc">
-              Whether you need the gear to perform or the coaching to grow, KINETIC is your ultimate pitch partner.
+              Ya sea que necesites el equipo para rendir o el entrenamiento para crecer, KINETIC es tu socio definitivo en el campo.
             </p>
             <div className="final-cta__buttons">
-              <button className="btn btn--primary btn--round" onClick={() => navigate('/catalog')}>Explore Shop</button>
-              <button className="btn btn--white btn--round" onClick={() => navigate('/academy')}>Apply for Academy</button>
+              <button className="btn btn--primary btn--round" onClick={() => navigate('/catalog')}>Explorar Tienda</button>
+              <button className="btn btn--white btn--round" onClick={() => navigate('/academy')}>Postular a la Academia</button>
             </div>
           </div>
         </div>
@@ -203,3 +203,4 @@ export default function HomePage() {
     </main>
   );
 }
+

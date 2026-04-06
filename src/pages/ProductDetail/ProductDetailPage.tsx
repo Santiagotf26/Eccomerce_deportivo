@@ -20,13 +20,13 @@ export default function ProductDetailPage() {
       <section className="detail__hero">
         <div className="detail__gallery">
           <div className="detail__gallery-main">
-            <img src={images.main} alt="VELOCITY X-1 profile" />
+            <img src={images.main} alt="Perfil VELOCITY X-1" />
           </div>
           <div className="detail__gallery-thumb">
-            <img src={images.secondary} alt="Sole view" />
+            <img src={images.secondary} alt="Vista de la suela" />
           </div>
           <div className="detail__gallery-thumb detail__gallery-thumb--zoom">
-            <img src={images.action} alt="Action shot" />
+            <img src={images.action} alt="Foto en acción" />
             <div className="detail__zoom-overlay">
               <span className="material-symbols-outlined">zoom_in</span>
             </div>
@@ -35,13 +35,13 @@ export default function ProductDetailPage() {
 
         <div className="detail__info">
           <div className="detail__badges">
-            <span className="detail__series-badge">Pro Series</span>
+            <span className="detail__series-badge">Serie Pro</span>
             <div className="detail__stars">
               {[1,2,3,4].map(i => (
                 <span key={i} className="material-symbols-outlined filled star-sm">star</span>
               ))}
               <span className="material-symbols-outlined star-sm">star</span>
-              <span className="detail__reviews-count">(48 Reviews)</span>
+              <span className="detail__reviews-count">(48 Reseñas)</span>
             </div>
           </div>
 
@@ -49,7 +49,7 @@ export default function ProductDetailPage() {
           <p className="detail__price">$285.00</p>
 
           <div className="detail__sizes">
-            <h3 className="detail__sizes-label">Select Size (US)</h3>
+            <h3 className="detail__sizes-label">Seleccionar Talla (US)</h3>
             <div className="detail__sizes-grid">
               {sizes.map(s => (
                 <button
@@ -65,23 +65,23 @@ export default function ProductDetailPage() {
           </div>
 
           <div className="detail__actions">
-            <button className="btn btn--primary detail__add-btn" onClick={() => navigate('/checkout')}>ADD TO CART</button>
-            <button className="btn btn--ghost detail__buy-btn">BUY NOW</button>
+            <button className="btn btn--primary detail__add-btn" onClick={() => navigate('/checkout')}>AÑADIR AL CARRITO</button>
+            <button className="btn btn--ghost detail__buy-btn">COMPRAR AHORA</button>
           </div>
 
           <div className="detail__features-box">
             <div className="detail__feature">
               <span className="material-symbols-outlined feature-icon">speed</span>
               <div>
-                <h4>Ultra-Lite Carbon</h4>
-                <p>Engineered for explosive acceleration and maximum energy return on firm ground.</p>
+                <h4>Carbono Ultra-Ligero</h4>
+                <p>Diseñado para una aceleración explosiva y el máximo retorno de energía en terreno firme.</p>
               </div>
             </div>
             <div className="detail__feature">
               <span className="material-symbols-outlined feature-icon">precision_manufacturing</span>
               <div>
-                <h4>GripControl Skin</h4>
-                <p>Precision texture for decisive command over the ball in all weather conditions.</p>
+                <h4>Piel GripControl</h4>
+                <p>Textura de precisión para un mando decisivo sobre el balón en todas las condiciones climáticas.</p>
               </div>
             </div>
           </div>
@@ -90,24 +90,24 @@ export default function ProductDetailPage() {
 
       {/* Technical Specs */}
       <section className="specs">
-        <h2 className="specs__title">TECHNICAL SPECIFICATIONS</h2>
+        <h2 className="specs__title">ESPECIFICACIONES TÉCNICAS</h2>
         <div className="specs__grid">
           <div className="specs__main">
             <div className="specs__main-content">
-              <h3>AERODYNAMIC SUPERIORITY</h3>
-              <p>The Velocity X-1 features a micro-textured synthetic upper that reduces drag during high-speed sprints. The seamless construction provides a second-skin feel, eliminating distractions at the moment of impact.</p>
+              <h3>SUPERIORIDAD AERODINÁMICA</h3>
+              <p>El Velocity X-1 presenta una parte superior sintética micro-texturizada que reduce la resistencia durante los sprints de alta velocidad. La construcción sin costuras proporciona una sensación de segunda piel, eliminando distracciones en el momento del impacto.</p>
               <ul className="specs__list">
-                <li><span className="specs__dot" /> Weight: 165g</li>
+                <li><span className="specs__dot" /> Peso: 165g</li>
                 <li><span className="specs__dot" /> Material: KinetiSkin Pro</li>
-                <li><span className="specs__dot" /> Outsole: RapidFlex TPU</li>
+                <li><span className="specs__dot" /> Suela: RapidFlex TPU</li>
               </ul>
             </div>
             <div className="specs__glow" />
           </div>
           <div className="specs__badge-card">
             <span className="material-symbols-outlined specs__bolt">bolt</span>
-            <h3>STADIUM GRADE</h3>
-            <p>Tested by elite athletes in the highest-intensity environments. Ready for match day.</p>
+            <h3>GRADO DE ESTADIO</h3>
+            <p>Probado por atletas de élite en los entornos de mayor intensidad. Listo para el día del partido.</p>
           </div>
         </div>
       </section>
@@ -115,9 +115,9 @@ export default function ProductDetailPage() {
       {/* Related Products */}
       <section className="related">
         <div className="related__header">
-          <h2 className="related__title">GEAR UP THE SQUAD</h2>
+          <h2 className="related__title">EQUIPA AL EQUIPO</h2>
           <a className="related__view-all" onClick={() => navigate('/catalog')}>
-            VIEW COLLECTION <span className="material-symbols-outlined">arrow_forward</span>
+            VER COLECCIÓN <span className="material-symbols-outlined">arrow_forward</span>
           </a>
         </div>
         <div className="related__scroll hide-scrollbar">
@@ -140,7 +140,7 @@ export default function ProductDetailPage() {
       <section className="reviews">
         <div className="reviews__grid">
           <div className="reviews__summary">
-            <h2 className="reviews__heading">PLAYER FEEDBACK</h2>
+            <h2 className="reviews__heading">COMENTARIOS DE JUGADORES</h2>
             <div className="reviews__score-row">
               <span className="reviews__big-score">4.8</span>
               <div>
@@ -148,7 +148,7 @@ export default function ProductDetailPage() {
                   {[1,2,3,4].map(i => <span key={i} className="material-symbols-outlined filled">star</span>)}
                   <span className="material-symbols-outlined filled">star_half</span>
                 </div>
-                <p className="reviews__count">Based on 124 ratings</p>
+                <p className="reviews__count">Basado en 124 valoraciones</p>
               </div>
             </div>
             <div className="reviews__bars">
@@ -172,9 +172,9 @@ export default function ProductDetailPage() {
                     {[1,2,3,4,5].map(i => <span key={i} className="material-symbols-outlined filled">star</span>)}
                   </div>
                 </div>
-                <span className="reviews__item-date">2 DAYS AGO</span>
+                <span className="reviews__item-date">HACE 2 DÍAS</span>
               </div>
-              <p className="reviews__item-text">"Incredible lockdown. The carbon fiber plate feels like it's pushing you forward with every step. Worth every penny for serious players."</p>
+              <p className="reviews__item-text">"Increíble ajuste. La placa de fibra de carbono se siente como si te estuviera empujando hacia adelante con cada paso. Vale cada céntimo para los jugadores serios."</p>
             </div>
             <div className="reviews__item">
               <div className="reviews__item-header">
@@ -185,14 +185,15 @@ export default function ProductDetailPage() {
                     <span className="material-symbols-outlined">star</span>
                   </div>
                 </div>
-                <span className="reviews__item-date">1 WEEK AGO</span>
+                <span className="reviews__item-date">HACE 1 SEMANA</span>
               </div>
-              <p className="reviews__item-text">"Best touch on the ball I've ever had. A bit tight at first, but once they break in, they feel like part of your foot."</p>
+              <p className="reviews__item-text">"El mejor toque de balón que he tenido. Un poco apretadas al principio, pero una vez que se amoldan, se sienten como parte de tu propio pie."</p>
             </div>
-            <button className="reviews__load-more">LOAD MORE REVIEWS</button>
+            <button className="reviews__load-more">CARGAR MÁS RESEÑAS</button>
           </div>
         </div>
       </section>
     </main>
   );
 }
+

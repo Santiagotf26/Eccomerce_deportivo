@@ -8,39 +8,39 @@ export default function Footer() {
         <div className="footer__brand">
           <span className="footer__logo">KINETIC</span>
           <p className="footer__tagline">
-            Leading the next generation of soccer performance through innovation and elite education.
+            Liderando la próxima generación de rendimiento en el fútbol a través de la innovación y la educación de élite.
           </p>
         </div>
 
         <div className="footer__col">
-          <h4 className="footer__heading">Shop</h4>
+          <h4 className="footer__heading">Tienda</h4>
           <ul className="footer__list">
-            <li><Link to="/catalog" className="footer__link">New Arrivals</Link></li>
-            <li><Link to="/catalog" className="footer__link">Footwear</Link></li>
-            <li><Link to="/catalog" className="footer__link">Training Kit</Link></li>
-            <li><Link to="/catalog" className="footer__link">Accessories</Link></li>
+            <li><Link to="/catalog" className="footer__link">Novedades</Link></li>
+            <li><Link to="/catalog" className="footer__link">Calzado</Link></li>
+            <li><Link to="/catalog" className="footer__link">Equipación de entrenamiento</Link></li>
+            <li><Link to="/catalog" className="footer__link">Accesorios</Link></li>
           </ul>
         </div>
 
         <div className="footer__col">
-          <h4 className="footer__heading">Company</h4>
+          <h4 className="footer__heading">Empresa</h4>
           <ul className="footer__list">
-            <li><a href="#" className="footer__link">Privacy Policy</a></li>
-            <li><a href="#" className="footer__link">Terms of Service</a></li>
-            <li><a href="#" className="footer__link">Shipping</a></li>
-            <li><a href="#" className="footer__link">FAQ</a></li>
+            <li><a href="#" className="footer__link">Política de privacidad</a></li>
+            <li><a href="#" className="footer__link">Términos de servicio</a></li>
+            <li><a href="#" className="footer__link">Envíos</a></li>
+            <li><a href="#" className="footer__link">Preguntas frecuentes</a></li>
           </ul>
         </div>
 
         <div className="footer__col">
-          <h4 className="footer__heading">Newsletter</h4>
+          <h4 className="footer__heading">Boletín informativo</h4>
           <div className="footer__newsletter">
             <input
               type="email"
               className="footer__input"
-              placeholder="JOIN THE MOMENTUM"
+              placeholder="ÚNETE AL IMPULSO"
             />
-            <button className="footer__subscribe-btn">Subscribe</button>
+            <button className="footer__subscribe-btn">Suscribirse</button>
           </div>
           <div className="footer__social">
             <div className="footer__social-icon">
@@ -57,7 +57,7 @@ export default function Footer() {
       </div>
 
       <div className="footer__bottom">
-        <p className="footer__copyright">© 2024 KINETIC MOMENTUM. ALL RIGHTS RESERVED.</p>
+        <p className="footer__copyright">© 2024 KINETIC MOMENTUM. TODOS LOS DERECHOS RESERVADOS.</p>
         <div className="footer__bottom-links">
           <span>Instagram</span>
           <span>X / Twitter</span>
@@ -67,3 +67,4 @@ export default function Footer() {
     </footer>
   );
 }
+
