@@ -39,6 +39,13 @@ export default function CatalogPage() {
 
   const handleAddToCart = (e: React.MouseEvent, product: typeof products[0]) => {
     e.stopPropagation();
+    
+    // Si el producto tiene variantes, redirigimos al detalle para que el usuario elija una talla/color
+    if (product.variants && product.variants.length > 0) {
+      navigate(`/product/${product.id}`);
+      return;
+    }
+
     addToCart(product);
     setAddedId(product.id);
     setTimeout(() => setAddedId(null), 1500);
@@ -175,8 +182,16 @@ export default function CatalogPage() {
                       background: isOutOfStock ? 'var(--surface-container-highest)' : ''
                     }}
                   >
-                    <span className="material-symbols-outlined">{addedId === product.id ? 'check' : isOutOfStock ? 'block' : 'shopping_bag'}</span>
-                    {addedId === product.id ? '¡Añadido!' : isOutOfStock ? 'Extinto / Agotado' : 'Añadir al Carrito'}
+                    <span className="material-symbols-outlined">
+                      {addedId === product.id ? 'check' : isOutOfStock ? 'block' : (product.variants?.length ?? 0) > 0 ? 'visibility' : 'shopping_bag'}
+                    </span>
+                    {addedId === product.id 
+                      ? '¡Añadido!' 
+                      : isOutOfStock 
+                        ? 'Extinto / Agotado' 
+                        : (product.variants?.length ?? 0) > 0 
+                          ? 'Ver producto' 
+                          : 'Añadir al Carrito'}
                   </button>
                 </div>
                 );

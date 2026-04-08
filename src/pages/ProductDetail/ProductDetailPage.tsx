@@ -17,6 +17,7 @@ export default function ProductDetailPage() {
   const [currentImage, setCurrentImage] = useState(0);
   const [suggested, setSuggested] = useState<Product[]>([]);
   const [activeAccordion, setActiveAccordion] = useState<string | null>(null);
+  const [selectionError, setSelectionError] = useState<string | null>(null);
 
   const toggleAccordion = (key: string) => {
     setActiveAccordion(prev => prev === key ? null : key);
@@ -41,15 +42,8 @@ export default function ProductDetailPage() {
       }
 
       setProduct(p);
-      if (p.variants?.length) {
-        const firstInStock = p.variants.find(v => v.stock > 0);
-        if (firstInStock) setSelectedVariant(firstInStock);
-      }
-      // Automáticamente seleccionamos el primer color de existir alguno para rellenar la info
-      if (p.colors?.length) {
-        setSelectedColorOption(p.colors[0]);
-      }
-
+      // Eliminamos la auto-selección automática para forzar al usuario a elegir
+      
       // Fetch suggested products
       if (p.categoryId) {
         productService.getAll().then(all => {
@@ -64,6 +58,21 @@ export default function ProductDetailPage() {
 
   const handleAddToCart = () => {
     if (!product) return;
+
+    const hasVariants = product.variants && product.variants.length > 0;
+    const hasColors = product.colors && product.colors.length > 0;
+
+    if (hasVariants && !selectedVariant) {
+      setSelectionError('POR FAVOR, SELECCIONA UNA TALLA');
+      return;
+    }
+
+    if (hasColors && !selectedColorOption) {
+      setSelectionError('POR FAVOR, SELECCIONA UN COLOR');
+      return;
+    }
+
+    setSelectionError(null);
     addToCart(product, selectedVariant ?? undefined, 1);
     setAdded(true);
     setTimeout(() => setAdded(false), 2000);
@@ -236,6 +245,7 @@ export default function ProductDetailPage() {
                     onClick={() => {
                       setSelectedColorOption(colorObj);
                       setCurrentImage(0); // Volver al inicio de las imagenes
+                      setSelectionError(null);
                     }}
                     title={colorObj.name}
                     style={{
@@ -271,7 +281,12 @@ export default function ProductDetailPage() {
                   <button
                     key={v.id}
                     className={`detail__size-box ${selectedVariant?.id === v.id ? 'detail__size-box--active' : ''} ${v.stock === 0 ? 'detail__size-box--disabled' : ''}`}
-                    onClick={() => v.stock > 0 && setSelectedVariant(v)}
+                    onClick={() => {
+                      if (v.stock > 0) {
+                        setSelectedVariant(v);
+                        setSelectionError(null);
+                      }
+                    }}
                     disabled={v.stock === 0}
                   >
                     {v.size}
@@ -304,10 +319,26 @@ export default function ProductDetailPage() {
 
 
           <div className="detail__actions-vertical">
+            {selectionError && (
+              <div className="detail__selection-warning fade-in">
+                <span className="material-symbols-outlined">warning</span>
+                {selectionError}
+              </div>
+            )}
             <button className="btn-solid-orange" onClick={handleAddToCart}>
               {added ? 'ADDED TO CART' : 'ADD TO CART'}
             </button>
-            <button className="btn-outline-gray" onClick={() => { handleAddToCart(); navigate('/checkout'); }}>
+            <button className="btn-outline-gray" onClick={() => { 
+              const hasVariants = product?.variants && product.variants.length > 0;
+              const hasColors = product?.colors && product.colors.length > 0;
+              
+              if ((hasVariants && !selectedVariant) || (hasColors && !selectedColorOption)) {
+                handleAddToCart(); // Esto disparará el error
+                return;
+              }
+              handleAddToCart(); 
+              navigate('/checkout'); 
+            }}>
               BUY NOW
             </button>
           </div>

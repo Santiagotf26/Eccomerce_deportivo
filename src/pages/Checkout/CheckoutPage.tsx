@@ -1,36 +1,93 @@
-import { useState } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useCart } from '../../context/CartContext';
 import { useAuth } from '../../context/AuthContext';
 import { api } from '../../lib/apiClient';
 import './CheckoutPage.css';
 
+// ==========================================
+// SUB-COMPONENTES MODULARES
+// ==========================================
+
+const Stepper = ({ currentStep }: { currentStep: number }) => {
+  const steps = [
+    { id: 1, label: 'Equipamiento', icon: 'shopping_cart' },
+    { id: 2, label: 'Envío', icon: 'local_shipping' },
+    { id: 3, label: 'Pago', icon: 'payments' }
+  ];
+
+  return (
+    <div className="stepper">
+      {steps.map((step) => (
+        <div 
+          key={step.id} 
+          className={`stepper__step ${currentStep === step.id ? 'stepper__step--active' : ''} ${currentStep > step.id ? 'stepper__step--complete' : ''}`}
+        >
+          <div className="stepper__circle">
+            {currentStep > step.id ? (
+              <span className="material-symbols-outlined step-icon">check</span>
+            ) : (
+              <span className="material-symbols-outlined step-icon">{step.icon}</span>
+            )}
+          </div>
+          <span className="stepper__label">{step.label}</span>
+        </div>
+      ))}
+    </div>
+  );
+};
+
+// ==========================================
+// PÁGINA PRINCIPAL
+// ==========================================
+
 export default function CheckoutPage() {
   const navigate = useNavigate();
-  const { items, totalPrice, updateQuantity, removeFromCart } = useCart();
-  const { isAuthenticated } = useAuth();
-  const [paymentMethod, setPaymentMethod] = useState<'card' | 'paypal' | 'apple'>('card');
-  const [sameAsShipping, setSameAsShipping] = useState(true);
-
-  const [ordering, setOrdering] = useState(false);
-  const [orderDone, setOrderDone] = useState(false);
-  const [orderError, setOrderError] = useState('');
+  const { items, totalPrice, updateQuantity, removeFromCart, clearCart } = useCart();
+  const { isAuthenticated, user } = useAuth();
+  
+  // Estado del flujo
+  const [step, setStep] = useState(1);
   const [paymentPhase, setPaymentPhase] = useState<'idle' | 'validating' | 'processing' | 'success' | 'error'>('idle');
+  const [orderError, setOrderError] = useState('');
+  const [showSuccessAlert, setShowSuccessAlert] = useState(false);
 
-  // Datos de envío y contacto (Invitado o registrado)
+  // Formulario y Validaciones
   const [customerInfo, setCustomerInfo] = useState({
-    name: '',
-    email: '',
+    name: user?.name || '',
+    email: user?.email || '',
     address: '',
     city: '',
-    zip: ''
+    zip: '',
+    phone: ''
   });
 
-  const { clearCart } = useCart();
+  const [errors, setErrors] = useState<Record<string, string>>({});
+  const [paymentMethod, setPaymentMethod] = useState<'card' | 'paypal' | 'apple'>('card');
+
+  // Cálculos
   const taxes = totalPrice * 0.04;
   const total = totalPrice + taxes;
 
-  if (items.length === 0) {
+  // Validación en tiempo real
+  useEffect(() => {
+    const newErrors: Record<string, string> = {};
+    
+    if (step === 2) {
+      if (!customerInfo.name || customerInfo.name.length < 3) newErrors.name = 'Nombre demasiado corto';
+      const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+      if (!customerInfo.email || !emailRegex.test(customerInfo.email)) newErrors.email = 'Email inválido';
+      if (!customerInfo.address) newErrors.address = 'La dirección es obligatoria';
+      if (!customerInfo.city) newErrors.city = 'La ciudad es obligatoria';
+      if (!customerInfo.zip || customerInfo.zip.length < 4) newErrors.zip = 'CP inválido';
+    }
+
+    setErrors(newErrors);
+  }, [customerInfo, step]);
+
+  const isStep2Valid = useMemo(() => Object.keys(errors).length === 0, [errors]);
+
+  if (items.length === 0 && !showSuccessAlert) {
     return (
       <main className="checkout">
         <div className="checkout__empty">
@@ -43,193 +100,237 @@ export default function CheckoutPage() {
     );
   }
 
+  const handlePlaceOrder = async () => {
+    setOrderError('');
+    setPaymentPhase('validating');
+
+    try {
+      await new Promise(r => setTimeout(r, 1200));
+      
+      const payload = { 
+        items: items.map(i => ({ 
+          product_variant_id: i.variant?.id ?? i.product.id, 
+          quantity: i.quantity 
+        })),
+        customer_name: customerInfo.name,
+        customer_email: customerInfo.email,
+        customer_phone: customerInfo.phone,
+        shipping_address: {
+          address: customerInfo.address,
+          city: customerInfo.city,
+          zip: customerInfo.zip
+        }
+      };
+
+      setPaymentPhase('processing');
+      const endpoint = isAuthenticated ? '/orders' : '/orders/guest';
+      await api.post(endpoint, payload);
+
+      await new Promise(r => setTimeout(r, 1500));
+      
+      setPaymentPhase('success');
+      setShowSuccessAlert(true);
+      clearCart();
+
+      // Redirección después de mostrar el éxito
+      setTimeout(() => {
+        navigate('/');
+      }, 6000);
+      
+    } catch (e: any) {
+      setPaymentPhase('error');
+      setOrderError(e.message || 'Error en la transacción. Revisa los datos.');
+      setTimeout(() => setPaymentPhase('idle'), 3000);
+    }
+  };
+
   return (
     <main className="checkout">
+      {/* Alerta de Éxito Final */}
+      {showSuccessAlert && (
+        <div className="success-alert">
+          <div className="success-alert__icon">
+            <span className="material-symbols-outlined">verified</span>
+          </div>
+          <div>
+            <h3 className="success-alert__title">¡Compra Recibida!</h3>
+            <p className="success-alert__desc">Tu pedido está en proceso. Recibirás una confirmación detallada en tu correo electrónico en breve.</p>
+          </div>
+        </div>
+      )}
+
       <header className="checkout__header">
-        <h1 className="checkout__title">Pago</h1>
-        <p className="checkout__subtitle">Revisa tu equipo y finaliza tu impulso</p>
+        <h1 className="checkout__title">KINETIC <span className="catalog__title--accent">Checkout</span></h1>
+        <Stepper currentStep={step} />
       </header>
 
-      <div className="checkout__grid">
-        <div className="checkout__left">
-          <section className="checkout__section">
-            <h2 className="checkout__section-title">Tu Selección ({items.length} artículo{items.length > 1 ? 's' : ''})</h2>
-            <div className="checkout__items">
-              {items.map(item => (
-                <div className="cart-item" key={item.product.id}>
-                  <div className="cart-item__image">
-                    <img src={item.product.image} alt={item.product.name} />
-                  </div>
-                  <div className="cart-item__details">
-                    <div className="cart-item__top">
-                      <div>
+      <div className="checkout__container">
+        <div className="checkout__main">
+          
+          {/* PASO 1: REVISIÓN DE EQUIPO */}
+          {step === 1 && (
+            <div className="checkout-card fade-in">
+              <h2 className="checkout__section-title">Revisión de Equipo ({items.length})</h2>
+              <div className="checkout__items">
+                {items.map(item => (
+                  <div className="cart-item" key={item.product.id}>
+                    <div className="cart-item__image">
+                      <img src={item.product.image} alt={item.product.name} />
+                    </div>
+                    <div className="cart-item__details">
+                      <div className="cart-item__head">
                         <h3 className="cart-item__name">{item.product.name}</h3>
-                        {item.variant && <span className="cart-item__tag">Talla {item.variant.size} · {item.variant.color}</span>}
+                        <span className="cart-item__price">${(item.product.price * item.quantity).toFixed(2)}</span>
                       </div>
-                      <span className="cart-item__price">${(item.product.price * item.quantity).toFixed(2)}</span>
-                    </div>
-                    {item.product.description && <p className="cart-item__desc">{item.product.description}</p>}
-                    <div className="cart-item__controls">
-                      <div className="quantity-control">
-                        <button onClick={() => updateQuantity(item.product.id, item.quantity - 1)}>
-                          <span className="material-symbols-outlined qty-icon">remove</span>
-                        </button>
-                        <span className="quantity-control__value">{item.quantity}</span>
-                        <button onClick={() => updateQuantity(item.product.id, item.quantity + 1)}>
-                          <span className="material-symbols-outlined qty-icon">add</span>
+                      {item.variant && <p className="cart-item__tag">Talla {item.variant.size} · {item.variant.color}</p>}
+                      <div className="cart-item__controls">
+                        <div className="quantity-control">
+                          <button onClick={() => updateQuantity(item.product.id, item.quantity - 1)}><span className="material-symbols-outlined qty-icon">remove</span></button>
+                          <span className="quantity-control__value">{item.quantity}</span>
+                          <button onClick={() => updateQuantity(item.product.id, item.quantity + 1)}><span className="material-symbols-outlined qty-icon">add</span></button>
+                        </div>
+                        <button className="cart-item__remove" onClick={() => removeFromCart(item.product.id)}>
+                          <span className="material-symbols-outlined">delete</span>
                         </button>
                       </div>
-                      <button className="cart-item__remove" onClick={() => removeFromCart(item.product.id)}>
-                        <span className="material-symbols-outlined">delete</span> Eliminar
-                      </button>
                     </div>
                   </div>
-                </div>
-              ))}
+                ))}
+              </div>
+              <div style={{ marginTop: '2rem', display: 'flex', justifyContent: 'flex-end' }}>
+                <button className="btn btn--primary btn--lg" onClick={() => setStep(2)}>
+                  Continuar al Envío <span className="material-symbols-outlined">arrow_forward</span>
+                </button>
+              </div>
             </div>
-          </section>
+          )}
 
-          <section className="checkout__forms">
-            <div className="form-card">
-              <h2 className="form-card__title">
-                <span className="material-symbols-outlined form-icon">local_shipping</span>
-                Dirección de Envío
-              </h2>
-              <div className="form-card__fields">
-                {!isAuthenticated && (
-                  <div className="form-field" data-testid="guest-email-container">
-                    <label className="form-field__label" htmlFor="guest-email">Correo Electrónico (Para tu recibo)</label>
-                    <input 
-                      id="guest-email"
-                      data-testid="guest-email-input"
-                      type="email" 
-                      className="form-field__input" 
-                      placeholder="atleta@kinetic.com" 
-                      value={customerInfo.email}
-                      onChange={e => setCustomerInfo({...customerInfo, email: e.target.value})}
-                      required
-                    />
-                  </div>
-                )}
+          {/* PASO 2: LOGÍSTICA DE DESPLIEGUE */}
+          {step === 2 && (
+            <div className="checkout-card fade-in">
+              <h2 className="checkout__section-title">Datos de Despliegue</h2>
+              <div className="form-grid">
                 <div className="form-field">
                   <label className="form-field__label">Nombre Completo</label>
                   <input 
                     type="text" 
-                    className="form-field__input" 
-                    placeholder="Tu nombre" 
+                    className={`checkout-input ${errors.name ? 'checkout-input--error' : ''}`}
+                    placeholder="Tu nombre de atleta"
                     value={customerInfo.name}
                     onChange={e => setCustomerInfo({...customerInfo, name: e.target.value})}
                   />
+                  {errors.name && <span className="error-message"><span className="material-symbols-outlined">error</span> {errors.name}</span>}
                 </div>
                 <div className="form-field">
-                  <label className="form-field__label">Calle y Número</label>
+                  <label className="form-field__label">Correo Electrónico</label>
+                  <input 
+                    type="email" 
+                    className={`checkout-input ${errors.email ? 'checkout-input--error' : ''}`}
+                    placeholder="atleta@kinetic.com"
+                    value={customerInfo.email}
+                    onChange={e => setCustomerInfo({...customerInfo, email: e.target.value})}
+                  />
+                  {errors.email && <span className="error-message"><span className="material-symbols-outlined">error</span> {errors.email}</span>}
+                </div>
+                <div className="form-field" style={{ gridColumn: 'span 2' }}>
+                  <label className="form-field__label">Dirección de Envío</label>
                   <input 
                     type="text" 
-                    className="form-field__input" 
-                    placeholder="Calle del Campo 123" 
+                    className={`checkout-input ${errors.address ? 'checkout-input--error' : ''}`}
+                    placeholder="Calle, número, departamento"
                     value={customerInfo.address}
                     onChange={e => setCustomerInfo({...customerInfo, address: e.target.value})}
                   />
                 </div>
-                <div className="form-field__row">
-                  <div className="form-field">
-                    <label className="form-field__label">Ciudad</label>
-                    <input 
-                      type="text" 
-                      className="form-field__input" 
-                      placeholder="Madrid" 
-                      value={customerInfo.city}
-                      onChange={e => setCustomerInfo({...customerInfo, city: e.target.value})}
-                    />
-                  </div>
-                  <div className="form-field">
-                    <label className="form-field__label">Código Postal</label>
-                    <input 
-                      type="text" 
-                      className="form-field__input" 
-                      placeholder="28001" 
-                      value={customerInfo.zip}
-                      onChange={e => setCustomerInfo({...customerInfo, zip: e.target.value})}
-                    />
-                  </div>
-                </div>
-              </div>
-            </div>
-
-            <div className="form-card">
-              <div className="form-card__header">
-                <h2 className="form-card__title">
-                  <span className="material-symbols-outlined form-icon">payments</span>
-                  Información de Facturación
-                </h2>
-                <label className="form-card__toggle">
-                  <input type="checkbox" checked={sameAsShipping} onChange={() => setSameAsShipping(!sameAsShipping)} />
-                  <span className="form-card__toggle-text">Igual que el envío</span>
-                </label>
-              </div>
-              <div className={`form-card__placeholders ${sameAsShipping ? 'form-card__placeholders--disabled' : ''}`}>
-                <div className="form-card__placeholder" />
-                <div className="form-card__placeholder" />
-                <div className="form-card__placeholder" />
-              </div>
-            </div>
-          </section>
-
-          <section className="checkout__section">
-            <h2 className="checkout__section-title">Método de Pago</h2>
-            <div className="payment-methods">
-              <div className={`payment-method ${paymentMethod === 'card' ? 'payment-method--active' : ''}`} onClick={() => setPaymentMethod('card')}>
-                <span className="material-symbols-outlined payment-method__icon">credit_card</span>
-                <span className="payment-method__label">Tarjeta de Crédito</span>
-                {paymentMethod === 'card' && <span className="material-symbols-outlined payment-method__check">check_circle</span>}
-              </div>
-              <div className={`payment-method ${paymentMethod === 'paypal' ? 'payment-method--active' : ''}`} onClick={() => setPaymentMethod('paypal')}>
-                <span className="material-symbols-outlined payment-method__icon">account_balance_wallet</span>
-                <span className="payment-method__label">PayPal</span>
-              </div>
-              <div className={`payment-method ${paymentMethod === 'apple' ? 'payment-method--active' : ''}`} onClick={() => setPaymentMethod('apple')}>
-                <span className="material-symbols-outlined payment-method__icon">contactless</span>
-                <span className="payment-method__label">Apple Pay</span>
-              </div>
-            </div>
-
-            {paymentMethod === 'card' && (
-              <div className="card-form">
                 <div className="form-field">
-                  <label className="form-field__label">Número de Tarjeta</label>
-                  <div className="card-form__input-wrap">
-                    <input type="text" className="form-field__input" placeholder="0000 0000 0000 0000" />
-                    <div className="card-form__brands"><div className="card-form__brand" /><div className="card-form__brand card-form__brand--alt" /></div>
-                  </div>
+                  <label className="form-field__label">Ciudad</label>
+                  <input 
+                    type="text" 
+                    className={`checkout-input ${errors.city ? 'checkout-input--error' : ''}`}
+                    value={customerInfo.city}
+                    onChange={e => setCustomerInfo({...customerInfo, city: e.target.value})}
+                  />
                 </div>
-                <div className="form-field__row">
-                  <div className="form-field">
-                    <label className="form-field__label">Fecha de Vencimiento</label>
-                    <input type="text" className="form-field__input" placeholder="MM / AA" />
-                  </div>
-                  <div className="form-field">
-                    <label className="form-field__label">CVC / CVV</label>
-                    <input type="text" className="form-field__input" placeholder="123" />
-                  </div>
+                <div className="form-field">
+                  <label className="form-field__label">Código Postal</label>
+                  <input 
+                    type="text" 
+                    className={`checkout-input ${errors.zip ? 'checkout-input--error' : ''}`}
+                    value={customerInfo.zip}
+                    onChange={e => setCustomerInfo({...customerInfo, zip: e.target.value})}
+                  />
                 </div>
               </div>
-            )}
-          </section>
+              <div style={{ marginTop: '2rem', display: 'flex', justifyContent: 'space-between' }}>
+                <button className="btn btn--ghost" onClick={() => setStep(1)}>Regresar</button>
+                <button 
+                  className="btn btn--primary btn--lg" 
+                  disabled={!isStep2Valid} 
+                  onClick={() => setStep(3)}
+                >
+                  Confirmar Envío <span className="material-symbols-outlined">arrow_forward</span>
+                </button>
+              </div>
+            </div>
+          )}
+
+          {/* PASO 3: IMPULSO FINAL (PAGO) */}
+          {step === 3 && (
+            <div className="checkout-card fade-in">
+              <h2 className="checkout__section-title">Método de Impulso</h2>
+              <div className="payment-methods">
+                <div className={`payment-method ${paymentMethod === 'card' ? 'payment-method--active' : ''}`} onClick={() => setPaymentMethod('card')}>
+                  <span className="material-symbols-outlined payment-method__icon">credit_card</span>
+                  <span className="payment-method__label">Tarjeta</span>
+                </div>
+                <div className={`payment-method ${paymentMethod === 'paypal' ? 'payment-method--active' : ''}`} onClick={() => setPaymentMethod('paypal')}>
+                  <span className="material-symbols-outlined payment-method__icon">account_balance_wallet</span>
+                  <span className="payment-method__label">PayPal</span>
+                </div>
+              </div>
+
+              {paymentMethod === 'card' && (
+                <div className="card-form fade-in" style={{ marginTop: '2rem' }}>
+                  <div className="form-field">
+                    <label className="form-field__label">Número de Tarjeta</label>
+                    <input type="text" className="checkout-input" placeholder="0000 0000 0000 0000" />
+                  </div>
+                  <div className="form-grid" style={{ marginTop: '1rem' }}>
+                    <div className="form-field">
+                      <label className="form-field__label">Expiración</label>
+                      <input type="text" className="checkout-input" placeholder="MM/AA" />
+                    </div>
+                    <div className="form-field">
+                      <label className="form-field__label">CVV</label>
+                      <input type="text" className="checkout-input" placeholder="***" />
+                    </div>
+                  </div>
+                </div>
+              )}
+
+              <div style={{ marginTop: '2rem', display: 'flex', justifyContent: 'space-between' }}>
+                <button className="btn btn--ghost" onClick={() => setStep(2)}>Regresar</button>
+                <button className="btn btn--primary btn--lg" onClick={handlePlaceOrder}>
+                  Realizar Pago <span className="material-symbols-outlined">bolt</span>
+                </button>
+              </div>
+            </div>
+          )}
         </div>
 
-        <div className="checkout__right">
-          <div className="order-summary">
-            <div className="order-summary__glow" />
+        {/* RESUMEN LATERAL (Sticky) */}
+        <aside className="checkout__sidebar">
+          <div className="order-summary checkout-card--glass">
             <div className="order-summary__content">
-              <h2 className="order-summary__title">Resumen del Pedido</h2>
+              <h2 className="order-summary__title">Resumen del Impulso</h2>
               <div className="order-summary__lines">
                 <div className="order-summary__line">
-                  <span>Productos ({items.reduce((s, i) => s + i.quantity, 0)})</span>
+                  <span>Subtotal</span>
                   <span className="order-summary__amount">${totalPrice.toFixed(2)}</span>
                 </div>
                 <div className="order-summary__line">
                   <span>Envío</span>
-                  <span className="order-summary__amount order-summary__amount--free">GRATIS</span>
+                  <span className="order-summary__amount" style={{color: 'var(--tertiary)'}}>GRATIS</span>
                 </div>
                 <div className="order-summary__line">
                   <span>Impuestos (4%)</span>
@@ -237,106 +338,18 @@ export default function CheckoutPage() {
                 </div>
               </div>
               <div className="order-summary__total">
-                <span className="order-summary__total-label">Total</span>
+                <span className="order-summary__total-label">TOTAL</span>
                 <span className="order-summary__total-value">${total.toFixed(2)}</span>
               </div>
-              <div className="order-summary__actions">
-                <button
-                  className="order-summary__place-btn"
-                  disabled={ordering || orderDone}
-                  onClick={async () => {
-                    // Validaciones básicas para invitados
-                    if (!isAuthenticated) {
-                      if (!customerInfo.email || !customerInfo.name) {
-                        setOrderError('Por favor ingresa tu nombre y correo para continuar.');
-                        return;
-                      }
-                    }
-
-                    // Verificar selección de variantes
-                    const hasUnselected = items.some(i => !i.variant && (i.product.variants?.length ?? 0) > 0);
-                    if (hasUnselected) {
-                      setOrderError('Por favor selecciona una talla para todos los productos.');
-                      return;
-                    }
-
-                    setOrderError('');
-                    setPaymentPhase('validating');
-
-                    try {
-                      // Fase 1: Simular validación de inventario (Aunque el backend lo hace real)
-                      await new Promise(r => setTimeout(r, 1200));
-                      
-                      const payload = { 
-                        items: items.map(i => ({ 
-                          product_variant_id: i.variant?.id ?? i.product.id, 
-                          quantity: i.quantity 
-                        })),
-                        customer_name: customerInfo.name || undefined,
-                        customer_email: customerInfo.email || undefined,
-                        customer_phone: "", // Expandible
-                        shipping_address: {
-                          address: customerInfo.address || undefined,
-                          city: customerInfo.city || undefined,
-                          zip: customerInfo.zip || undefined
-                        }
-                      };
-
-                      setPaymentPhase('processing');
-                      
-                      // Llamada Real al Backend - Diferenciamos endpoint por auth
-                      const endpoint = isAuthenticated ? '/orders' : '/orders/guest';
-                      await api.post(endpoint, payload);
-
-                      // Fase 2: Simulación de confirmación bancaria
-                      await new Promise(r => setTimeout(r, 1500));
-                      
-                      setPaymentPhase('success');
-                      setOrderDone(true);
-                      clearCart();
-
-                      // Fase 3: Éxito final
-                      setTimeout(() => {
-                        navigate('/');
-                      }, 4000);
-                      
-                    } catch (e: any) {
-                      console.error(e);
-                      setPaymentPhase('error');
-                      setOrderError(e.message || 'Error en la transacción. Verifica tu stock.');
-                      setTimeout(() => setPaymentPhase('idle'), 3000);
-                    }
-                  }}
-                >
-                  {paymentPhase !== 'idle' ? 'Gestando Impulso...' : 'Realizar Pedido'}
-                </button>
-                {orderError && <p style={{ color: 'var(--error)', fontSize: '0.85rem', marginTop: '0.5rem' }}>{orderError}</p>}
-                <p className="order-summary__terms">
-                  Al hacer clic en realizar pedido, aceptas nuestros <br />
-                  <a href="#">Términos de Servicio</a> y <a href="#">Política de la Academia</a>
-                </p>
-              </div>
-              <div className="order-summary__trust">
-                <div className="trust-item">
-                  <div className="trust-item__icon"><span className="material-symbols-outlined">verified_user</span></div>
-                  <div>
-                    <p className="trust-item__title">Pago Seguro</p>
-                    <p className="trust-item__desc">Transacción encriptada SSL</p>
-                  </div>
-                </div>
-                <div className="trust-item">
-                  <div className="trust-item__icon"><span className="material-symbols-outlined">undo</span></div>
-                  <div>
-                    <p className="trust-item__title">Devoluciones en 30 Días</p>
-                    <p className="trust-item__desc">Excluye inscripciones de academia</p>
-                  </div>
-                </div>
-              </div>
+              <p className="order-summary__terms" style={{ color: 'var(--outline)' }}>
+                Transacción protegida por protocolo KINETIC SSL.
+              </p>
             </div>
           </div>
-        </div>
+        </aside>
       </div>
 
+      {/* OVERLAY DE PROCESAMIENTO */}
       {paymentPhase !== 'idle' && (
         <div className={`payment-overlay payment-overlay--${paymentPhase}`}>
           <div className="payment-overlay__content">
@@ -344,37 +357,33 @@ export default function CheckoutPage() {
               <>
                 <div className="payment-overlay__loader payment-overlay__loader--scanner" />
                 <h2 className="payment-overlay__title">Validando Inventario</h2>
-                <p className="payment-overlay__text">Asegurando que tu equipo esté listo para el despliegue...</p>
+                <p className="payment-overlay__text">Verificando disponibilidad de tu equipo...</p>
               </>
             )}
-
             {paymentPhase === 'processing' && (
               <>
                 <div className="payment-overlay__loader payment-overlay__loader--pulse" />
-                <h2 className="payment-overlay__title">Procesando Transacción</h2>
-                <p className="payment-overlay__text">Conectando con la red KINETIC para asegurar tu impulso.</p>
+                <h2 className="payment-overlay__title">Procesando Pago</h2>
+                <p className="payment-overlay__text">Conectando con la red bancaria segura.</p>
               </>
             )}
-
             {paymentPhase === 'success' && (
               <>
                 <div className="payment-overlay__success-icon">
-                  <span className="material-symbols-outlined">check_circle</span>
+                  <span className="material-symbols-outlined">verified</span>
                 </div>
-                <h2 className="payment-overlay__title">¡Impulso Completado!</h2>
-                <p className="payment-overlay__text">Tu pedido ha sido procesado. El stock ha sido descontado satisfactoriamente.</p>
-                <div className="payment-overlay__confetti" />
+                <h2 className="payment-overlay__title">¡Éxito Total!</h2>
+                <p className="payment-overlay__text">Tu pedido ha sido procesado. Redirigiendo al inicio...</p>
               </>
             )}
-
             {paymentPhase === 'error' && (
               <>
                 <div className="payment-overlay__error-icon">
                   <span className="material-symbols-outlined">error</span>
                 </div>
-                <h2 className="payment-overlay__title">Transacción Interrumpida</h2>
+                <h2 className="payment-overlay__title">Fallo en el Salto</h2>
                 <p className="payment-overlay__text">{orderError}</p>
-                <button className="btn btn--outline" onClick={() => setPaymentPhase('idle')}>Intentar de Nuevo</button>
+                <button className="btn btn--outline" onClick={() => setPaymentPhase('idle')}>Corregir Datos</button>
               </>
             )}
           </div>
