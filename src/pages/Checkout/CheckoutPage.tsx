@@ -1,14 +1,32 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useCart } from '../../context/CartContext';
+import { useAuth } from '../../context/AuthContext';
+import { api } from '../../lib/apiClient';
 import './CheckoutPage.css';
 
 export default function CheckoutPage() {
   const navigate = useNavigate();
   const { items, totalPrice, updateQuantity, removeFromCart } = useCart();
+  const { isAuthenticated } = useAuth();
   const [paymentMethod, setPaymentMethod] = useState<'card' | 'paypal' | 'apple'>('card');
   const [sameAsShipping, setSameAsShipping] = useState(true);
 
+  const [ordering, setOrdering] = useState(false);
+  const [orderDone, setOrderDone] = useState(false);
+  const [orderError, setOrderError] = useState('');
+  const [paymentPhase, setPaymentPhase] = useState<'idle' | 'validating' | 'processing' | 'success' | 'error'>('idle');
+
+  // Datos de envío y contacto (Invitado o registrado)
+  const [customerInfo, setCustomerInfo] = useState({
+    name: '',
+    email: '',
+    address: '',
+    city: '',
+    zip: ''
+  });
+
+  const { clearCart } = useCart();
   const taxes = totalPrice * 0.04;
   const total = totalPrice + taxes;
 
@@ -46,7 +64,7 @@ export default function CheckoutPage() {
                     <div className="cart-item__top">
                       <div>
                         <h3 className="cart-item__name">{item.product.name}</h3>
-                        {item.size && <span className="cart-item__tag">Talla {item.size}</span>}
+                        {item.variant && <span className="cart-item__tag">Talla {item.variant.size} · {item.variant.color}</span>}
                       </div>
                       <span className="cart-item__price">${(item.product.price * item.quantity).toFixed(2)}</span>
                     </div>
@@ -78,22 +96,61 @@ export default function CheckoutPage() {
                 Dirección de Envío
               </h2>
               <div className="form-card__fields">
+                {!isAuthenticated && (
+                  <div className="form-field" data-testid="guest-email-container">
+                    <label className="form-field__label" htmlFor="guest-email">Correo Electrónico (Para tu recibo)</label>
+                    <input 
+                      id="guest-email"
+                      data-testid="guest-email-input"
+                      type="email" 
+                      className="form-field__input" 
+                      placeholder="atleta@kinetic.com" 
+                      value={customerInfo.email}
+                      onChange={e => setCustomerInfo({...customerInfo, email: e.target.value})}
+                      required
+                    />
+                  </div>
+                )}
                 <div className="form-field">
                   <label className="form-field__label">Nombre Completo</label>
-                  <input type="text" className="form-field__input" placeholder="Tu nombre" />
+                  <input 
+                    type="text" 
+                    className="form-field__input" 
+                    placeholder="Tu nombre" 
+                    value={customerInfo.name}
+                    onChange={e => setCustomerInfo({...customerInfo, name: e.target.value})}
+                  />
                 </div>
                 <div className="form-field">
                   <label className="form-field__label">Calle y Número</label>
-                  <input type="text" className="form-field__input" placeholder="Calle del Campo 123" />
+                  <input 
+                    type="text" 
+                    className="form-field__input" 
+                    placeholder="Calle del Campo 123" 
+                    value={customerInfo.address}
+                    onChange={e => setCustomerInfo({...customerInfo, address: e.target.value})}
+                  />
                 </div>
                 <div className="form-field__row">
                   <div className="form-field">
                     <label className="form-field__label">Ciudad</label>
-                    <input type="text" className="form-field__input" placeholder="Madrid" />
+                    <input 
+                      type="text" 
+                      className="form-field__input" 
+                      placeholder="Madrid" 
+                      value={customerInfo.city}
+                      onChange={e => setCustomerInfo({...customerInfo, city: e.target.value})}
+                    />
                   </div>
                   <div className="form-field">
                     <label className="form-field__label">Código Postal</label>
-                    <input type="text" className="form-field__input" placeholder="28001" />
+                    <input 
+                      type="text" 
+                      className="form-field__input" 
+                      placeholder="28001" 
+                      value={customerInfo.zip}
+                      onChange={e => setCustomerInfo({...customerInfo, zip: e.target.value})}
+                    />
                   </div>
                 </div>
               </div>
@@ -184,7 +241,76 @@ export default function CheckoutPage() {
                 <span className="order-summary__total-value">${total.toFixed(2)}</span>
               </div>
               <div className="order-summary__actions">
-                <button className="order-summary__place-btn">Realizar Pedido</button>
+                <button
+                  className="order-summary__place-btn"
+                  disabled={ordering || orderDone}
+                  onClick={async () => {
+                    // Validaciones básicas para invitados
+                    if (!isAuthenticated) {
+                      if (!customerInfo.email || !customerInfo.name) {
+                        setOrderError('Por favor ingresa tu nombre y correo para continuar.');
+                        return;
+                      }
+                    }
+
+                    // Verificar selección de variantes
+                    const hasUnselected = items.some(i => !i.variant && (i.product.variants?.length ?? 0) > 0);
+                    if (hasUnselected) {
+                      setOrderError('Por favor selecciona una talla para todos los productos.');
+                      return;
+                    }
+
+                    setOrderError('');
+                    setPaymentPhase('validating');
+
+                    try {
+                      // Fase 1: Simular validación de inventario (Aunque el backend lo hace real)
+                      await new Promise(r => setTimeout(r, 1200));
+                      
+                      const payload = { 
+                        items: items.map(i => ({ 
+                          product_variant_id: i.variant?.id ?? i.product.id, 
+                          quantity: i.quantity 
+                        })),
+                        customer_name: customerInfo.name || undefined,
+                        customer_email: customerInfo.email || undefined,
+                        customer_phone: "", // Expandible
+                        shipping_address: {
+                          address: customerInfo.address || undefined,
+                          city: customerInfo.city || undefined,
+                          zip: customerInfo.zip || undefined
+                        }
+                      };
+
+                      setPaymentPhase('processing');
+                      
+                      // Llamada Real al Backend - Diferenciamos endpoint por auth
+                      const endpoint = isAuthenticated ? '/orders' : '/orders/guest';
+                      await api.post(endpoint, payload);
+
+                      // Fase 2: Simulación de confirmación bancaria
+                      await new Promise(r => setTimeout(r, 1500));
+                      
+                      setPaymentPhase('success');
+                      setOrderDone(true);
+                      clearCart();
+
+                      // Fase 3: Éxito final
+                      setTimeout(() => {
+                        navigate('/');
+                      }, 4000);
+                      
+                    } catch (e: any) {
+                      console.error(e);
+                      setPaymentPhase('error');
+                      setOrderError(e.message || 'Error en la transacción. Verifica tu stock.');
+                      setTimeout(() => setPaymentPhase('idle'), 3000);
+                    }
+                  }}
+                >
+                  {paymentPhase !== 'idle' ? 'Gestando Impulso...' : 'Realizar Pedido'}
+                </button>
+                {orderError && <p style={{ color: 'var(--error)', fontSize: '0.85rem', marginTop: '0.5rem' }}>{orderError}</p>}
                 <p className="order-summary__terms">
                   Al hacer clic en realizar pedido, aceptas nuestros <br />
                   <a href="#">Términos de Servicio</a> y <a href="#">Política de la Academia</a>
@@ -210,6 +336,50 @@ export default function CheckoutPage() {
           </div>
         </div>
       </div>
+
+      {paymentPhase !== 'idle' && (
+        <div className={`payment-overlay payment-overlay--${paymentPhase}`}>
+          <div className="payment-overlay__content">
+            {paymentPhase === 'validating' && (
+              <>
+                <div className="payment-overlay__loader payment-overlay__loader--scanner" />
+                <h2 className="payment-overlay__title">Validando Inventario</h2>
+                <p className="payment-overlay__text">Asegurando que tu equipo esté listo para el despliegue...</p>
+              </>
+            )}
+
+            {paymentPhase === 'processing' && (
+              <>
+                <div className="payment-overlay__loader payment-overlay__loader--pulse" />
+                <h2 className="payment-overlay__title">Procesando Transacción</h2>
+                <p className="payment-overlay__text">Conectando con la red KINETIC para asegurar tu impulso.</p>
+              </>
+            )}
+
+            {paymentPhase === 'success' && (
+              <>
+                <div className="payment-overlay__success-icon">
+                  <span className="material-symbols-outlined">check_circle</span>
+                </div>
+                <h2 className="payment-overlay__title">¡Impulso Completado!</h2>
+                <p className="payment-overlay__text">Tu pedido ha sido procesado. El stock ha sido descontado satisfactoriamente.</p>
+                <div className="payment-overlay__confetti" />
+              </>
+            )}
+
+            {paymentPhase === 'error' && (
+              <>
+                <div className="payment-overlay__error-icon">
+                  <span className="material-symbols-outlined">error</span>
+                </div>
+                <h2 className="payment-overlay__title">Transacción Interrumpida</h2>
+                <p className="payment-overlay__text">{orderError}</p>
+                <button className="btn btn--outline" onClick={() => setPaymentPhase('idle')}>Intentar de Nuevo</button>
+              </>
+            )}
+          </div>
+        </div>
+      )}
     </main>
   );
 }

@@ -2,7 +2,7 @@ import { useState, useEffect, useCallback } from 'react';
 import type { Product } from '../types';
 import { productService } from '../services/productService';
 
-export function useProducts() {
+export function useProducts(options?: { admin?: boolean }) {
   const [products, setProducts] = useState<Product[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -10,7 +10,7 @@ export function useProducts() {
   const fetchProducts = useCallback(async () => {
     setLoading(true);
     try {
-      const data = await productService.getAll();
+      const data = options?.admin ? await productService.getAllAdmin() : await productService.getAll();
       setProducts(data);
       setError(null);
     } catch {
@@ -18,7 +18,7 @@ export function useProducts() {
     } finally {
       setLoading(false);
     }
-  }, []);
+  }, [options?.admin]);
 
   useEffect(() => { fetchProducts(); }, [fetchProducts]);
 
@@ -35,7 +35,11 @@ export function useProducts() {
   };
 
   const deleteProduct = async (id: string) => {
-    await productService.delete(id);
+    const updated = await productService.delete(id);
+    if (options?.admin) {
+      setProducts(prev => prev.map(p => p.id === id ? updated : p));
+      return;
+    }
     setProducts(prev => prev.filter(p => p.id !== id));
   };
 

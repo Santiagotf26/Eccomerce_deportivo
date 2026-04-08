@@ -1,60 +1,44 @@
 /**
- * Servicio de Categorías — Simula una API REST
+ * categoryService.ts — Conectado al backend NestJS real.
  */
 import type { Category } from '../types';
+import { api } from '../lib/apiClient';
 
-const STORAGE_KEY = 'kinetic_categories';
-const DELAY = 200;
 
-const SEED_CATEGORIES: Category[] = [
-  { id: 'cat-footwear', name: 'Calzado', icon: 'steps', productCount: 2 },
-  { id: 'cat-apparel', name: 'Ropa', icon: 'checkroom', productCount: 2 },
-  { id: 'cat-equipment', name: 'Equipamiento', icon: 'sports_soccer', productCount: 2 },
-];
 
-function delay<T>(data: T): Promise<T> {
-  return new Promise(resolve => setTimeout(() => resolve(data), DELAY));
-}
-
-function getStored(): Category[] {
-  const stored = localStorage.getItem(STORAGE_KEY);
-  if (stored) return JSON.parse(stored);
-  localStorage.setItem(STORAGE_KEY, JSON.stringify(SEED_CATEGORIES));
-  return SEED_CATEGORIES;
-}
-
-function save(categories: Category[]): void {
-  localStorage.setItem(STORAGE_KEY, JSON.stringify(categories));
+function mapCategory(raw: any): Category {
+  return {
+    id: raw.id,
+    name: raw.name,
+    slug: raw.slug,
+    icon: raw.icon || 'category',
+    productCount: raw._count?.products ?? 0,
+  };
 }
 
 export const categoryService = {
   async getAll(): Promise<Category[]> {
-    return delay(getStored());
+    const data = await api.get<any[]>('/products/categories/all');
+    return data.map(mapCategory);
   },
 
   async getById(id: string): Promise<Category | undefined> {
-    return delay(getStored().find(c => c.id === id));
+    const all = await this.getAll();
+    return all.find(c => c.id === id);
   },
 
-  async create(data: Omit<Category, 'id' | 'productCount'>): Promise<Category> {
-    const categories = getStored();
-    const newCat: Category = { ...data, id: `cat-${Date.now()}`, productCount: 0 };
-    categories.push(newCat);
-    save(categories);
-    return delay(newCat);
+  // Solo ADMIN
+  async create(data: { name: string; slug: string; icon?: string }): Promise<Category> {
+    const raw = await api.post<any>('/products/categories', data);
+    return mapCategory(raw);
   },
 
   async update(id: string, updates: Partial<Category>): Promise<Category> {
-    const categories = getStored();
-    const index = categories.findIndex(c => c.id === id);
-    if (index === -1) throw new Error('Categoría no encontrada');
-    categories[index] = { ...categories[index], ...updates };
-    save(categories);
-    return delay(categories[index]);
+    const raw = await api.patch<any>(`/products/categories/${id}`, updates);
+    return mapCategory(raw);
   },
 
   async delete(id: string): Promise<void> {
-    save(getStored().filter(c => c.id !== id));
-    return delay(undefined);
+    await api.delete(`/products/categories/${id}`);
   },
 };

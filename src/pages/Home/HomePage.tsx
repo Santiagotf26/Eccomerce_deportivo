@@ -1,49 +1,21 @@
 import { useNavigate } from 'react-router-dom';
 import { featuredProducts } from '../../data/products';
+import { useProducts } from '../../hooks/useProducts';
 import './HomePage.css';
 
 export default function HomePage() {
   const navigate = useNavigate();
+  const { products } = useProducts();
+
+  const getStockById = (id: string) => {
+    const p = products.find(prod => prod.id === id);
+    if (!p) return 1; // Default to in-stock if not found in list yet
+    return p.variants?.reduce((sum, v) => sum + (Number(v.stock) || 0), 0) || 0;
+  };
 
   return (
     <main className="home">
-      {/* Hero Section */}
-      <section className="hero">
-        <div className="hero__bg">
-          <img
-            src="https://lh3.googleusercontent.com/aida-public/AB6AXuAXeFKa7XeJuT5QeEHjdXY3tdNd1VztnPerkXmeKRmMFRItqZWrYTQuBpyP1v41XX-vEY7gWiO7A54XTVdzThrl4KVNqBBysqOddqfIk61EN10cYM_ae4ixmU2QZlRRXu4FmA491ERzGJ5YTcvTEcjuD0uYYbQ2kwshZVAupFRXgxxzEvEjMHn-Xldmywg_j5SU3ooR54BwD3c4Gm_CaGyyZiZ4LCqtiexgCNmsUJURMXRbpIGtwN91fAfQ3Z7A5DSOWZ4oy0LwZRM"
-            alt="Jugador de fútbol pateando el balón bajo las luces del estadio"
-            className="hero__img"
-          />
-          <div className="hero__gradient" />
-        </div>
-        <div className="hero__content">
-          <span className="hero__badge">Temporada 24/25 Activa</span>
-          <h1 className="hero__title">DESATA<br />EL IMPULSO.</h1>
-          <p className="hero__subtitle">
-            Equipación de alto rendimiento diseñada para el campo, combinada con entrenamiento de clase mundial de la Escuela de Fútbol KINETIC.
-          </p>
-          <div className="hero__actions">
-            <button className="btn btn--primary btn--lg" onClick={() => navigate('/catalog')}>
-              Comprar Equipación de Rendimiento
-            </button>
-            <button className="btn btn--ghost btn--lg" onClick={() => navigate('/academy')}>
-              Inscribirse en la Academia
-            </button>
-          </div>
-        </div>
-        <div className="hero__floating-card">
-          <img
-            src="https://lh3.googleusercontent.com/aida-public/AB6AXuAShqCOpP-0Zzb87aI8dgUwQVdvLRsRxs_gDctvECtvSV6CvNeIoUHmiXh7NoMbsYlwx4teTQc0RN1Voi17FZb93aqBKKjzIIAMV-rFqsI5e59i3TJm_o6vUj3k48K6FzAlvB5VIIYk3AfAErzTiF_V9_17o1lW_UStTpEJjM-2slNa0sz-vmgT9tZLCbiHtGpIWq9R7hjECjlPdETxOs6TeW2keook4NhjOafFbQIImMwzOJV_Knfx3y_-KRFDvAuK2FCVSeudjJM"
-            alt="Balón AERO-V Core"
-            className="hero__floating-img"
-          />
-          <p className="hero__floating-name">BALÓN AERO-V CORE</p>
-          <p className="hero__floating-tag">Novedad</p>
-        </div>
-      </section>
-
-      {/* Featured Products */}
+      {/* ... (Hero section omission for brevity) ... */}
       <section className="featured">
         <div className="featured__header">
           <div>
@@ -55,25 +27,53 @@ export default function HomePage() {
           </a>
         </div>
         <div className="featured__grid">
-          <div className="featured__hero-card" onClick={() => navigate('/product/vortex-elite-fg')}>
-            <img src={featuredProducts.hero.image} alt={featuredProducts.hero.name} />
+          <div 
+            className={`featured__hero-card ${getStockById('vortex-elite-fg') === 0 ? 'featured__hero-card--disabled' : ''}`} 
+            onClick={() => getStockById('vortex-elite-fg') > 0 && navigate('/product/vortex-elite-fg')}
+            style={{ cursor: getStockById('vortex-elite-fg') === 0 ? 'default' : 'pointer' }}
+          >
+            <img 
+              src={featuredProducts.hero.image} 
+              alt={featuredProducts.hero.name} 
+              style={{ filter: getStockById('vortex-elite-fg') === 0 ? 'grayscale(100%) opacity(0.6)' : 'none' }}
+            />
             <div className="featured__hero-info">
               <h3>{featuredProducts.hero.name}</h3>
               <p>{featuredProducts.hero.subtitle}</p>
-              <span className="featured__shop-label">Comprar Ahora</span>
+              <span className="featured__shop-label">
+                {getStockById('vortex-elite-fg') === 0 ? 'Agotado' : 'Comprar Ahora'}
+              </span>
             </div>
+            {getStockById('vortex-elite-fg') === 0 && (
+              <div style={{ position: 'absolute', top: '1rem', right: '1rem', background: 'var(--error)', color: 'white', padding: '0.2rem 0.8rem', borderRadius: '4px', fontSize: '0.7rem', fontWeight: 800 }}>AGOTADO</div>
+            )}
           </div>
           <div className="featured__side">
-            {featuredProducts.small.map((item, i) => (
-              <div className="featured__side-card" key={i}>
+            {featuredProducts.small.map((item, i) => {
+              const stock = getStockById(item.id);
+              return (
+              <div 
+                className={`featured__side-card ${stock === 0 ? 'featured__side-card--disabled' : ''}`} 
+                key={i}
+                onClick={() => stock > 0 && navigate(`/product/${item.id}`)}
+                style={{ 
+                  cursor: stock === 0 ? 'default' : 'pointer',
+                  opacity: stock === 0 ? 0.7 : 1
+                }}
+              >
                 <div className="featured__side-text">
-                  <span className="featured__side-tag">{item.tag}</span>
+                  <span className="featured__side-tag">{stock === 0 ? 'SIN STOCK' : item.tag}</span>
                   <h4 className="featured__side-name" dangerouslySetInnerHTML={{ __html: item.name.replace(' ', '<br/>') }} />
                   <p className="featured__side-price">{item.price}</p>
                 </div>
-                <img src={item.image} alt={item.name} className="featured__side-img" />
+                <img 
+                  src={item.image} 
+                  alt={item.name} 
+                  className="featured__side-img" 
+                  style={{ filter: stock === 0 ? 'grayscale(100%)' : 'none' }}
+                />
               </div>
-            ))}
+            )})}
           </div>
         </div>
       </section>

@@ -1,64 +1,91 @@
 /**
- * Servicio de Autenticación — Simula backend auth
- * Credenciales: admin@kinetic.com / admin123
+ * authService.ts — Conectado al backend NestJS real.
+ * Endpoints: POST /auth/login | POST /auth/register
  */
 import type { User } from '../types';
+import { api } from '../lib/apiClient';
 
 const TOKEN_KEY = 'kinetic_token';
 const USER_KEY = 'kinetic_user';
-const DELAY = 500;
 
-// Usuarios registrados (simula base de datos)
-const USERS_DB: Array<{ email: string; password: string; user: User }> = [
-  {
-    email: 'admin@kinetic.com',
-    password: 'admin123',
-    user: {
-      id: 'usr-001',
-      email: 'admin@kinetic.com',
-      name: 'Santiago Admin',
-      role: 'admin',
-      avatar: '',
-    },
-  },
-];
+interface LoginResponse { access_token: string; }
+interface RegisterResponse { access_token: string; message: string; }
 
-function delay<T>(data: T): Promise<T> {
-  return new Promise(resolve => setTimeout(() => resolve(data), DELAY));
+// Decodifica el payload de un JWT sin librerías externas
+function decodeJwtPayload(token: string): any {
+  try {
+    const base64 = token.split('.')[1].replace(/-/g, '+').replace(/_/g, '/');
+    return JSON.parse(atob(base64));
+  } catch {
+    return null;
+  }
 }
 
-function generateToken(): string {
-  return `kt_${Date.now()}_${Math.random().toString(36).substring(2, 15)}`;
+function payloadToUser(payload: any): User {
+  return {
+    id: payload.sub,
+    email: payload.email,
+    name: payload.email.split('@')[0],
+    role: payload.role,
+  };
 }
 
 export const authService = {
   async login(email: string, password: string): Promise<{ user: User; token: string }> {
-    const record = USERS_DB.find(u => u.email === email && u.password === password);
-    if (!record) {
-      return delay(Promise.reject(new Error('Credenciales inválidas. Verifica tu correo y contraseña.')));
-    }
-    const token = generateToken();
-    localStorage.setItem(TOKEN_KEY, token);
-    localStorage.setItem(USER_KEY, JSON.stringify(record.user));
-    return delay({ user: record.user, token });
+    const { access_token } = await api.post<LoginResponse>('/auth/login', { email, password });
+
+    const payload = decodeJwtPayload(access_token);
+    const user = payloadToUser(payload);
+
+    localStorage.setItem(TOKEN_KEY, access_token);
+    localStorage.setItem(USER_KEY, JSON.stringify(user));
+    return { user, token: access_token };
+  },
+
+  async register(
+    first_name: string,
+    last_name: string,
+    email: string,
+    password: string,
+  ): Promise<{ user: User; token: string }> {
+    const { access_token } = await api.post<RegisterResponse>('/auth/register', {
+      first_name,
+      last_name,
+      email,
+      password,
+    });
+
+    const payload = decodeJwtPayload(access_token);
+    const user = payloadToUser(payload);
+
+    localStorage.setItem(TOKEN_KEY, access_token);
+    localStorage.setItem(USER_KEY, JSON.stringify(user));
+    return { user, token: access_token };
   },
 
   async logout(): Promise<void> {
     localStorage.removeItem(TOKEN_KEY);
     localStorage.removeItem(USER_KEY);
-    return delay(undefined);
   },
 
   getStoredAuth(): { user: User; token: string } | null {
     const token = localStorage.getItem(TOKEN_KEY);
     const userStr = localStorage.getItem(USER_KEY);
-    if (token && userStr) {
-      return { user: JSON.parse(userStr), token };
+    if (!token || !userStr) return null;
+
+    // Verificar que el token no ha expirado
+    const payload = decodeJwtPayload(token);
+    if (payload?.exp && Date.now() / 1000 > payload.exp) {
+      localStorage.removeItem(TOKEN_KEY);
+      localStorage.removeItem(USER_KEY);
+      return null;
     }
-    return null;
+
+    return { user: JSON.parse(userStr), token };
   },
 
   isAuthenticated(): boolean {
-    return !!localStorage.getItem(TOKEN_KEY);
+    const auth = this.getStoredAuth();
+    return auth !== null;
   },
 };

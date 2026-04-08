@@ -4,15 +4,15 @@ import { useCategories } from '../../hooks/useCategories';
 import ProductForm from './ProductForm';
 import type { Product } from '../../types';
 import './ProductsAdmin.css';
+import Swal from 'sweetalert2';
 
 export default function ProductsAdmin() {
-  const { products, loading, deleteProduct } = useProducts();
+  const { products, loading, deleteProduct, updateProduct, fetchProducts } = useProducts({ admin: true });
   const { categories } = useCategories();
   const [search, setSearch] = useState('');
   const [filterCat, setFilterCat] = useState('');
   const [showForm, setShowForm] = useState(false);
   const [editingProduct, setEditingProduct] = useState<Product | null>(null);
-  const [deleteConfirm, setDeleteConfirm] = useState<string | null>(null);
 
   const filtered = products.filter(p => {
     const matchSearch = p.name.toLowerCase().includes(search.toLowerCase());
@@ -25,9 +25,53 @@ export default function ProductsAdmin() {
     setShowForm(true);
   };
 
-  const handleDelete = async (id: string) => {
-    await deleteProduct(id);
-    setDeleteConfirm(null);
+  const handleDeleteClick = (product: Product) => {
+    Swal.fire({
+      title: '¿Desactivar Producto?',
+      text: 'El producto quedará oculto en la tienda, pero seguirá disponible en el panel de admin.',
+      icon: 'warning',
+      showCancelButton: true,
+      confirmButtonColor: '#ef4444',
+      cancelButtonColor: '#6b7280',
+      confirmButtonText: 'Desactivar',
+      cancelButtonText: 'Cancelar'
+    }).then(async (result) => {
+      if (result.isConfirmed) {
+        await deleteProduct(product.id);
+        Swal.fire({
+           title: '¡Desactivado!',
+           text: 'El producto ha sido desactivado.',
+           icon: 'success',
+           timer: 1500,
+           showConfirmButton: false
+        });
+      }
+    });
+  };
+
+  const handleTogglePublished = async (product: Product) => {
+    const actionName = product.isPublished ? 'desactivar' : 'activar';
+    const result = await Swal.fire({
+      title: `¿Deseas ${actionName} este producto?`,
+      text: product.name,
+      icon: 'question',
+      showCancelButton: true,
+      confirmButtonColor: product.isPublished ? '#ef4444' : '#10b981',
+      cancelButtonColor: '#6b7280',
+      confirmButtonText: `Sí, ${actionName}`,
+      cancelButtonText: 'Cancelar'
+    });
+
+    if (result.isConfirmed) {
+      await updateProduct(product.id, { isPublished: !product.isPublished });
+      Swal.fire({
+        title: '¡Actualizado!',
+        text: `El producto ha sido ${product.isPublished ? 'desactivado' : 'activado'}.`,
+        icon: 'success',
+        timer: 1500,
+        showConfirmButton: false
+      });
+    }
   };
 
   const handleFormClose = () => {
@@ -36,7 +80,22 @@ export default function ProductsAdmin() {
   };
 
   if (showForm) {
-    return <ProductForm product={editingProduct} onClose={handleFormClose} />;
+    return (
+      <ProductForm
+        product={editingProduct}
+        onClose={handleFormClose}
+        onSaved={async () => {
+          await fetchProducts();
+          Swal.fire({
+             title: editingProduct ? '¡Producto actualizado!' : '¡Producto agregado!',
+             icon: 'success',
+             timer: 1500,
+             showConfirmButton: false
+          });
+          handleFormClose();
+        }}
+      />
+    );
   }
 
   return (
@@ -46,10 +105,12 @@ export default function ProductsAdmin() {
           <h1 className="products-admin__title">Productos</h1>
           <p className="products-admin__count">{products.length} productos en total</p>
         </div>
-        <button className="products-admin__add-btn" onClick={() => setShowForm(true)}>
-          <span className="material-symbols-outlined">add</span>
-          Nuevo Producto
-        </button>
+        <div style={{ display: 'flex', gap: '1rem' }}>
+          <button className="products-admin__add-btn" onClick={() => setShowForm(true)}>
+            <span className="material-symbols-outlined">add</span>
+            Nuevo Producto
+          </button>
+        </div>
       </div>
 
       {/* Filters */}
@@ -76,6 +137,7 @@ export default function ProductsAdmin() {
                 <th>Categoría</th>
                 <th>Precio</th>
                 <th>Rating</th>
+                <th>Estado</th>
                 <th>Acciones</th>
               </tr>
             </thead>
@@ -84,7 +146,13 @@ export default function ProductsAdmin() {
                 <tr key={p.id}>
                   <td>
                     <div className="products-admin__product-cell">
-                      <img src={p.image} alt={p.name} className="products-admin__thumb" />
+                      {p.image ? (
+                        <img src={p.image} alt={p.name} className="products-admin__thumb" />
+                      ) : (
+                        <div className="products-admin__thumb" style={{ background: 'var(--surface)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                          <span className="material-symbols-outlined" style={{ color: 'var(--text-light)', fontSize: '1.2rem' }}>image</span>
+                        </div>
+                      )}
                       <div>
                         <p className="products-admin__product-name">{p.name}</p>
                         {p.badge && <span className="products-admin__badge">{p.badge}</span>}
@@ -93,8 +161,8 @@ export default function ProductsAdmin() {
                   </td>
                   <td><span className="products-admin__cat-chip">{p.category}</span></td>
                   <td>
-                    <span className="products-admin__price">${p.price.toFixed(2)}</span>
-                    {p.originalPrice && <span className="products-admin__original">${p.originalPrice.toFixed(2)}</span>}
+                    <span className="products-admin__price">${(p.price || 0).toFixed(2)}</span>
+                    {p.originalPrice && <span className="products-admin__original">${(p.originalPrice || 0).toFixed(2)}</span>}
                   </td>
                   <td>
                     <div className="products-admin__rating">
@@ -103,11 +171,34 @@ export default function ProductsAdmin() {
                     </div>
                   </td>
                   <td>
+                    <span
+                      style={{
+                        backgroundColor: p.isPublished ? '#10b981' : '#ef4444',
+                        color: 'white',
+                        padding: '4px 8px',
+                        borderRadius: '4px',
+                        fontSize: '0.85rem',
+                        fontWeight: 600,
+                        display: 'inline-block',
+                        textAlign: 'center'
+                      }}
+                    >
+                      {p.isPublished ? 'Activo' : 'Desactivado'}
+                    </span>
+                  </td>
+                  <td>
                     <div className="products-admin__actions">
+                      <button
+                        className="products-admin__action-btn"
+                        onClick={() => handleTogglePublished(p)}
+                        title={p.isPublished ? 'Desactivar producto' : 'Activar producto'}
+                      >
+                        <span className="material-symbols-outlined">{p.isPublished ? 'toggle_off' : 'toggle_on'}</span>
+                      </button>
                       <button className="products-admin__action-btn products-admin__action-btn--edit" onClick={() => handleEdit(p)} title="Editar">
                         <span className="material-symbols-outlined">edit</span>
                       </button>
-                      <button className="products-admin__action-btn products-admin__action-btn--delete" onClick={() => setDeleteConfirm(p.id)} title="Eliminar">
+                      <button className="products-admin__action-btn products-admin__action-btn--delete" onClick={() => handleDeleteClick(p)} title="Eliminar/Desactivar">
                         <span className="material-symbols-outlined">delete</span>
                       </button>
                     </div>
@@ -115,27 +206,13 @@ export default function ProductsAdmin() {
                 </tr>
               ))}
               {filtered.length === 0 && (
-                <tr><td colSpan={5} className="products-admin__empty">No se encontraron productos</td></tr>
+                <tr><td colSpan={6} className="products-admin__empty">No se encontraron productos</td></tr>
               )}
             </tbody>
           </table>
         </div>
       )}
 
-      {/* Delete Modal */}
-      {deleteConfirm && (
-        <div className="admin-modal-overlay" onClick={() => setDeleteConfirm(null)}>
-          <div className="admin-modal" onClick={e => e.stopPropagation()}>
-            <span className="material-symbols-outlined admin-modal__icon">warning</span>
-            <h3 className="admin-modal__title">¿Eliminar Producto?</h3>
-            <p className="admin-modal__text">Esta acción no se puede deshacer. El producto será eliminado permanentemente.</p>
-            <div className="admin-modal__actions">
-              <button className="admin-modal__btn admin-modal__btn--cancel" onClick={() => setDeleteConfirm(null)}>Cancelar</button>
-              <button className="admin-modal__btn admin-modal__btn--danger" onClick={() => handleDelete(deleteConfirm)}>Eliminar</button>
-            </div>
-          </div>
-        </div>
-      )}
     </div>
   );
 }

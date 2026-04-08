@@ -2,6 +2,7 @@ import { useState, type FormEvent } from 'react';
 import { useCategories } from '../../hooks/useCategories';
 import { useProducts } from '../../hooks/useProducts';
 import './CategoriesAdmin.css';
+import Swal from 'sweetalert2';
 
 export default function CategoriesAdmin() {
   const { categories, createCategory, updateCategory, deleteCategory } = useCategories();
@@ -11,14 +12,22 @@ export default function CategoriesAdmin() {
   const [editingId, setEditingId] = useState<string | null>(null);
   const [editName, setEditName] = useState('');
   const [editIcon, setEditIcon] = useState('');
-  const [deleteConfirm, setDeleteConfirm] = useState<string | null>(null);
 
   const iconOptions = ['steps', 'checkroom', 'sports_soccer', 'fitness_center', 'sports', 'backpack', 'watch', 'shield'];
 
   const handleCreate = async (e: FormEvent) => {
     e.preventDefault();
     if (!newName.trim()) return;
-    await createCategory({ name: newName, icon: newIcon });
+    await createCategory({ name: newName, slug: newName.toLowerCase().replace(/\s+/g, '-'), icon: newIcon });
+    
+    Swal.fire({
+      title: '¡Categoría creada!',
+      text: `La categoría "${newName}" ha sido agregada con éxito.`,
+      icon: 'success',
+      timer: 2000,
+      showConfirmButton: false
+    });
+
     setNewName('');
     setNewIcon('category');
   };
@@ -32,18 +41,51 @@ export default function CategoriesAdmin() {
   const saveEdit = async () => {
     if (!editingId || !editName.trim()) return;
     await updateCategory(editingId, { name: editName, icon: editIcon });
+    
+    Swal.fire({
+      title: '¡Cambios guardados!',
+      icon: 'success',
+      timer: 1500,
+      showConfirmButton: false
+    });
+
     setEditingId(null);
   };
 
-  const handleDelete = async (id: string) => {
-    const count = products.filter(p => p.categoryId === id).length;
+  const handleDeleteClick = async (cat: any) => {
+    const count = products.filter(p => p.categoryId === cat.id).length;
+    
     if (count > 0) {
-      alert(`Esta categoría tiene ${count} producto(s) asociados. Reasigna los productos primero.`);
-      setDeleteConfirm(null);
+      Swal.fire({
+        title: 'No se puede eliminar',
+        text: `Esta categoría tiene ${count} producto(s) asociados. Reasigna o elimina los productos primero.`,
+        icon: 'error',
+        confirmButtonColor: '#3b82f6'
+      });
       return;
     }
-    await deleteCategory(id);
-    setDeleteConfirm(null);
+
+    const { isConfirmed } = await Swal.fire({
+      title: '¿Eliminar Categoría?',
+      text: `¿Estás seguro de eliminar "${cat.name}"? Esta acción no se puede deshacer.`,
+      icon: 'warning',
+      showCancelButton: true,
+      confirmButtonColor: '#ef4444',
+      cancelButtonColor: '#6b7280',
+      confirmButtonText: 'Sí, eliminar',
+      cancelButtonText: 'Cancelar'
+    });
+
+    if (isConfirmed) {
+      await deleteCategory(cat.id);
+      Swal.fire({
+        title: '¡Eliminado!',
+        text: 'La categoría ha sido eliminada correctamente.',
+        icon: 'success',
+        timer: 1500,
+        showConfirmButton: false
+      });
+    }
   };
 
   return (
@@ -121,10 +163,10 @@ export default function CategoriesAdmin() {
                   </>
                 ) : (
                   <>
-                    <button className="cat-card__btn" onClick={() => startEdit(cat.id, cat.name, cat.icon)} title="Editar">
+                    <button className="cat-card__btn" onClick={() => startEdit(cat.id, cat.name, cat.icon ?? 'category')} title="Editar">
                       <span className="material-symbols-outlined">edit</span>
                     </button>
-                    <button className="cat-card__btn cat-card__btn--delete" onClick={() => setDeleteConfirm(cat.id)} title="Eliminar">
+                    <button className="cat-card__btn cat-card__btn--delete" onClick={() => handleDeleteClick(cat)} title="Eliminar">
                       <span className="material-symbols-outlined">delete</span>
                     </button>
                   </>
@@ -134,20 +176,6 @@ export default function CategoriesAdmin() {
           );
         })}
       </div>
-
-      {deleteConfirm && (
-        <div className="admin-modal-overlay" onClick={() => setDeleteConfirm(null)}>
-          <div className="admin-modal" onClick={e => e.stopPropagation()}>
-            <span className="material-symbols-outlined admin-modal__icon">warning</span>
-            <h3 className="admin-modal__title">¿Eliminar Categoría?</h3>
-            <p className="admin-modal__text">Esta acción es permanente.</p>
-            <div className="admin-modal__actions">
-              <button className="admin-modal__btn admin-modal__btn--cancel" onClick={() => setDeleteConfirm(null)}>Cancelar</button>
-              <button className="admin-modal__btn admin-modal__btn--danger" onClick={() => handleDelete(deleteConfirm)}>Eliminar</button>
-            </div>
-          </div>
-        </div>
-      )}
     </div>
   );
 }

@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { productService } from '../../services/productService';
 import { useCart } from '../../context/CartContext';
-import type { Product } from '../../types';
+import type { Product, ProductVariant } from '../../types';
 import './ProductDetailPage.css';
 
 export default function ProductDetailPage() {
@@ -11,29 +11,60 @@ export default function ProductDetailPage() {
   const { addToCart } = useCart();
   const [product, setProduct] = useState<Product | null>(null);
   const [loading, setLoading] = useState(true);
-  const [selectedSize, setSelectedSize] = useState(9);
-  const [quantity, setQuantity] = useState(1);
+  const [selectedVariant, setSelectedVariant] = useState<ProductVariant | null>(null);
+  const [selectedColorOption, setSelectedColorOption] = useState<{ name: string, hex: string, image: string } | null>(null);
   const [added, setAdded] = useState(false);
-  const sizes = [7, 8, 9, 10, 11, 12];
+  const [currentImage, setCurrentImage] = useState(0);
+  const [suggested, setSuggested] = useState<Product[]>([]);
+  const [activeAccordion, setActiveAccordion] = useState<string | null>(null);
+
+  const toggleAccordion = (key: string) => {
+    setActiveAccordion(prev => prev === key ? null : key);
+  };
 
   useEffect(() => {
     if (!id) return;
     setLoading(true);
     productService.getById(id).then(p => {
-      setProduct(p || null);
+      if (!p) {
+        setLoading(false);
+        return;
+      }
+
+      // Calcular stock total
+      const totalStock = p.variants?.reduce((sum, v) => sum + (Number(v.stock) || 0), 0) || 0;
+
+      if (totalStock <= 0) {
+        // Redirigir si no hay stock
+        navigate('/catalog', { replace: true });
+        return;
+      }
+
+      setProduct(p);
+      if (p.variants?.length) {
+        const firstInStock = p.variants.find(v => v.stock > 0);
+        if (firstInStock) setSelectedVariant(firstInStock);
+      }
+      // Automáticamente seleccionamos el primer color de existir alguno para rellenar la info
+      if (p.colors?.length) {
+        setSelectedColorOption(p.colors[0]);
+      }
+
+      // Fetch suggested products
+      if (p.categoryId) {
+        productService.getAll().then(all => {
+          const others = all.filter(item => item.categoryId === p.categoryId && item.id !== p.id);
+          setSuggested(others.slice(0, 4));
+        });
+      }
+
       setLoading(false);
     });
   }, [id]);
 
-  const images = {
-    main: product?.image || 'https://lh3.googleusercontent.com/aida-public/AB6AXuAPxQ9N4WY2QRmEVDHV80HMasPKkIu9yqdbKTm2HrbZQYfINkTSdIFwpzfyL1ZHPKmF4dZV5rr6JLOCs9ZTkkp9_Ti7QuJ3ktb4Q8o1aGlVm-IINF8AG2bUNEwVRR_54GypR6PzmkjGtm4na8ap6T8qmc44l45HZG19g2ZmAdf6zgFqg1wO8e4L25-0Kyi8l04Y40X4wEBP1VoeEpJIaURbEzxrrmrqg_bA9RV4ruN8ODMnOaAQVIl8UHCa37WSMFEIqFvOBrx_gAI',
-    secondary: 'https://lh3.googleusercontent.com/aida-public/AB6AXuB-z6xNbA6uGjsrwHUIEQ-c1_7zlC95f3RxeDTl1ZRzidxhyBGEvpzjIX0sw5ShXqKgB9_E3paV8tXyV1rIsUkUf0bR6oQ0tbZi6C0odFflsAc35X38n2ghCchwSwihQZhUBBqqd84a_z0NYb_-CBSYTblC8W72jT45AQjHCgEB1Q709DoZxOQDVrQl_CQYwBTi90_LQaBJJultZFSsJxJu3xj-0el_ZctENNkjp0xU7TSS0XcLgTfo9_geomWeF8QNW5Nt909Vb-Y',
-    action: 'https://lh3.googleusercontent.com/aida-public/AB6AXuB7JEdFlexqT_pr1Rmlz-po-pEmU_ujHO4M8fBC_kXFFJuBPz6rn08of0VFbrLj8MpyHwqsePqv81Btqem3_yreK7SxK1SJlnylWVK9poEx02bd7pfrcKbQN5Nta8wVVNF4cUGlo7YvxKUqJ0CeLnJaehDiXnwxGPwNrVycVX578LeNExfZGNqWsEH836HEXEKS2u42kjqZa-EVoRIYEr24FaikkWAA0-xL5ripmFkGUQe2yk9XzkN2_6ixbY7YYmxHkewylLTH-Bo',
-  };
-
   const handleAddToCart = () => {
     if (!product) return;
-    addToCart(product, quantity, selectedSize);
+    addToCart(product, selectedVariant ?? undefined, 1);
     setAdded(true);
     setTimeout(() => setAdded(false), 2000);
   };
@@ -46,159 +77,260 @@ export default function ProductDetailPage() {
     );
   }
 
+  const baseImage = selectedColorOption?.image || product?.image;
+  // Convertimos a Set para eliminar duplicados (si la baseImage también está en images)
+  const productImages = product
+    ? Array.from(new Set([baseImage, ...(product.images || [])].filter(Boolean)))
+    : [];
+
   const displayName = product?.name || 'VELOCITY X-1';
   const displayPrice = product?.price || 285;
+
+  const nextImage = () => setCurrentImage((prev) => (prev + 1) % productImages.length);
+  const prevImage = () => setCurrentImage((prev) => (prev - 1 + productImages.length) % productImages.length);
 
   return (
     <main className="detail">
       <section className="detail__hero">
         <div className="detail__gallery">
           <div className="detail__gallery-main">
-            <img src={images.main} alt={displayName} />
+            <div className="detail__gallery-counter">
+              {currentImage + 1} / {productImages.length}
+            </div>
+
+            <img src={productImages[currentImage]} alt={displayName} key={currentImage} />
+
+            {productImages.length > 1 && (
+              <div className="detail__gallery-nav">
+                <button className="detail__nav-btn" onClick={prevImage}>
+                  <span className="material-symbols-outlined">chevron_left</span>
+                </button>
+                <button className="detail__nav-btn" onClick={nextImage}>
+                  <span className="material-symbols-outlined">chevron_right</span>
+                </button>
+              </div>
+            )}
           </div>
-          <div className="detail__gallery-thumb">
-            <img src={images.secondary} alt="Vista de la suela" />
-          </div>
-          <div className="detail__gallery-thumb detail__gallery-thumb--zoom">
-            <img src={images.action} alt="Foto en acción" />
-            <div className="detail__zoom-overlay">
-              <span className="material-symbols-outlined">zoom_in</span>
+
+          <div className="detail__accordion-wrapper detail__accordion-wrapper--gallery">
+            {/* Features/Characteristics */}
+            <div className="detail__accordion">
+              <button className="detail__accordion-btn" onClick={() => toggleAccordion('features')}>
+                <span>Características</span>
+                <span className="material-symbols-outlined" style={{ transform: activeAccordion === 'features' ? 'rotate(180deg)' : 'rotate(0)' }}>keyboard_arrow_down</span>
+              </button>
+              <div className={`detail__accordion-content ${activeAccordion === 'features' ? 'detail__accordion-content--open' : ''}`}>
+                <div className="detail__accordion-inner">
+                  {product?.features && product.features.length > 0 && (
+                    <div className="detail__desc-block">
+                      <h4>Características Destacadas</h4>
+                      <div className="detail__features-card" style={{ marginTop: '0', background: 'transparent', padding: '0' }}>
+                        {product.features.map((feat, i) => (
+                          <div className="detail__feature-item" key={i}>
+                            <span className="material-symbols-outlined">{feat.icon}</span>
+                            <div className="detail__feature-text"><strong>{feat.title}</strong><p>{feat.desc}</p></div>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+                  {product?.techSpecs && product.techSpecs.length > 0 && (
+                    <div className="detail__desc-block">
+                      <h4>Especificaciones Técnicas</h4>
+                      <p style={{ marginBottom: '1rem', fontSize: '0.85rem' }}>{product?.specsDescription}</p>
+                      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(180px, 1fr))', gap: '1rem' }}>
+                        {product.techSpecs.map((spec, i) => (
+                          <div key={i} style={{ borderLeft: '2px solid var(--primary)', paddingLeft: '1rem' }}>
+                            <small style={{ color: 'var(--slate-400)', fontWeight: 800, textTransform: 'uppercase', fontSize: '0.6rem' }}>{spec.label}</small>
+                            <p style={{ fontWeight: 700, fontSize: '0.9rem' }}>{spec.value}</p>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+                </div>
+              </div>
+            </div>
+
+            {/* Care */}
+            <div className="detail__accordion">
+              <button className="detail__accordion-btn" onClick={() => toggleAccordion('care')}>
+                <span>Cuidados</span>
+                <span className="material-symbols-outlined" style={{ transform: activeAccordion === 'care' ? 'rotate(180deg)' : 'rotate(0)' }}>keyboard_arrow_down</span>
+              </button>
+              <div className={`detail__accordion-content ${activeAccordion === 'care' ? 'detail__accordion-content--open' : ''}`}>
+                <div className="detail__accordion-inner">
+                  <p style={{ fontSize: '0.95rem', color: 'var(--slate-600)', lineHeight: 1.6 }}>
+                    {product?.careInstructions || 'Para mantener tus artículos en óptimas condiciones, límpialos regularmente con un paño húmedo y evita la exposición prolongada al sol directo.'}
+                  </p>
+                </div>
+              </div>
+            </div>
+
+            {/* Warranty */}
+            <div className="detail__accordion">
+              <button className="detail__accordion-btn" onClick={() => toggleAccordion('warranty')}>
+                <span>Garantía</span>
+                <span className="material-symbols-outlined" style={{ transform: activeAccordion === 'warranty' ? 'rotate(180deg)' : 'rotate(0)' }}>keyboard_arrow_down</span>
+              </button>
+              <div className={`detail__accordion-content ${activeAccordion === 'warranty' ? 'detail__accordion-content--open' : ''}`}>
+                <div className="detail__accordion-inner">
+                  <p style={{ fontSize: '0.95rem', color: 'var(--slate-600)', lineHeight: 1.6 }}>
+                    {product?.warranty || 'Este producto cuenta con una garantía de 3 meses por defectos de fabricación bajo condiciones normales de uso.'}
+                  </p>
+                </div>
+              </div>
+            </div>
+
+            {/* Shipping */}
+            <div className="detail__accordion">
+              <button className="detail__accordion-btn" onClick={() => toggleAccordion('shipping')}>
+                <span>Detalles de Envío</span>
+                <span className="material-symbols-outlined" style={{ transform: activeAccordion === 'shipping' ? 'rotate(180deg)' : 'rotate(0)' }}>keyboard_arrow_down</span>
+              </button>
+              <div className={`detail__accordion-content ${activeAccordion === 'shipping' ? 'detail__accordion-content--open' : ''}`}>
+                <div className="detail__accordion-inner">
+                  <p style={{ fontSize: '0.95rem', color: 'var(--slate-600)', lineHeight: 1.6 }}>
+                    {product?.shippingDetails || 'Realizamos envíos a todo el país. El tiempo estimado de entrega es de 2 a 5 días hábiles dependiendo de tu ubicación.'}
+                  </p>
+                </div>
+              </div>
             </div>
           </div>
         </div>
 
         <div className="detail__info">
-          <div className="detail__badges">
-            <span className="detail__series-badge">{product?.badge || 'Serie Pro'}</span>
-            <div className="detail__stars">
-              {[1,2,3,4].map(i => (
-                <span key={i} className="material-symbols-outlined filled star-sm">star</span>
-              ))}
-              <span className="material-symbols-outlined star-sm">star</span>
-              <span className="detail__reviews-count">({product?.reviews || 48} Reseñas)</span>
+          <div className="detail__header-row">
+            <span className="detail__series-badge">{product?.badge || 'PRO SERIES'}</span>
+            <div className="detail__stars-row">
+              <div className="detail__stars-icons">
+                {[1, 2, 3, 4, 5].map(i => (
+                  <span key={i} className="material-symbols-outlined filled star-sm">star</span>
+                ))}
+              </div>
+              <span className="detail__reviews-count">(48 Reviews)</span>
             </div>
           </div>
 
-          <h1 className="detail__name">{displayName.toUpperCase()}</h1>
-          <p className="detail__price">${displayPrice.toFixed(2)}</p>
+          <h1 className="detail__name-italic">{displayName.toUpperCase()}</h1>
+          <p className="detail__price-large">${displayPrice.toFixed(2)}</p>
 
-          {product?.description && <p className="detail__description">{product.description}</p>}
+          {product?.description && (
+            <p className="detail__description-long">
+              {product.description}
+            </p>
+          )}
 
-          <div className="detail__sizes">
-            <h3 className="detail__sizes-label">Seleccionar Talla (US)</h3>
-            <div className="detail__sizes-grid">
-              {sizes.map(s => (
-                <button key={s} className={`detail__size-btn ${selectedSize === s ? 'detail__size-btn--active' : ''}`} onClick={() => setSelectedSize(s)}>{s}</button>
-              ))}
-              <button className="detail__size-btn detail__size-btn--disabled" disabled>13</button>
+
+
+
+          {product?.colors && product.colors.length > 0 && (
+            <div style={{ marginBottom: '2rem' }}>
+              <h3 className="detail__section-label">
+                COLOR SELECCIONADO: <span style={{ color: 'var(--on-surface)' }}>{selectedColorOption?.name}</span>
+              </h3>
+              <div style={{ display: 'flex', gap: '0.75rem', flexWrap: 'wrap', marginTop: '0.5rem' }}>
+                {product.colors.map((colorObj, i) => (
+                  <button
+                    key={i}
+                    onClick={() => {
+                      setSelectedColorOption(colorObj);
+                      setCurrentImage(0); // Volver al inicio de las imagenes
+                    }}
+                    title={colorObj.name}
+                    style={{
+                      width: '32px',
+                      height: '32px',
+                      borderRadius: '50%',
+                      backgroundColor: colorObj.hex || '#000',
+                      border: selectedColorOption?.name === colorObj.name
+                        ? '2px solid var(--on-surface)'
+                        : '2px solid transparent',
+                      outline: selectedColorOption?.name === colorObj.name
+                        ? '2px solid var(--surface-container)'
+                        : 'none',
+                      cursor: 'pointer',
+                      transition: 'all 0.2s ease'
+                    }}
+                    aria-label={`Seleccionar color ${colorObj.name}`}
+                  />
+                ))}
+              </div>
+            </div>
+          )}
+
+          <div className="detail__sizes-section">
+            <h3 className="detail__section-label">
+              {product?.category?.toLowerCase() === 'calzado' ? 'ELIGE TU TALLA (US)' :
+                product?.category?.toLowerCase() === 'ropa' ? 'SELECCIONA TU TALLA' :
+                  'VERSIONES DISPONIBLES'}
+            </h3>
+            <div className="detail__sizes-grid-compact">
+              {product?.variants && product.variants.length > 0 ? (
+                product.variants.map(v => (
+                  <button
+                    key={v.id}
+                    className={`detail__size-box ${selectedVariant?.id === v.id ? 'detail__size-box--active' : ''} ${v.stock === 0 ? 'detail__size-box--disabled' : ''}`}
+                    onClick={() => v.stock > 0 && setSelectedVariant(v)}
+                    disabled={v.stock === 0}
+                  >
+                    {v.size}
+                  </button>
+                ))
+              ) : (
+                <p className="detail__no-variants">Talla única / Estándar</p>
+              )}
             </div>
           </div>
 
-          {/* Quantity */}
-          <div className="detail__quantity">
-            <h3 className="detail__sizes-label">Cantidad</h3>
-            <div className="detail__quantity-controls">
-              <button onClick={() => setQuantity(Math.max(1, quantity - 1))}><span className="material-symbols-outlined">remove</span></button>
-              <span>{quantity}</span>
-              <button onClick={() => setQuantity(quantity + 1)}><span className="material-symbols-outlined">add</span></button>
+          <div className="detail__stock-indicator">
+            <div className={`detail__stock-status ${selectedVariant && selectedVariant.stock < 5 ? 'detail__stock-status--low' : ''}`}>
+              <span className="material-symbols-outlined">inventory_2</span>
+              <span>
+                {selectedVariant
+                  ? (selectedVariant.stock > 0 ? `${selectedVariant.stock} unidades disponibles` : 'Sin stock disponible')
+                  : 'Selecciona una variante'}
+              </span>
             </div>
+            {selectedVariant && selectedVariant.stock > 0 && (
+              <div className="detail__stock-bar-bg">
+                <div
+                  className="detail__stock-bar-fill"
+                  style={{ width: `${Math.min((selectedVariant.stock / 20) * 100, 100)}%` }}
+                />
+              </div>
+            )}
           </div>
 
-          <div className="detail__actions">
-            <button className={`btn btn--primary detail__add-btn ${added ? 'detail__add-btn--added' : ''}`} onClick={handleAddToCart}>
-              {added ? '✓ ¡AÑADIDO AL CARRITO!' : 'AÑADIR AL CARRITO'}
+
+          <div className="detail__actions-vertical">
+            <button className="btn-solid-orange" onClick={handleAddToCart}>
+              {added ? 'ADDED TO CART' : 'ADD TO CART'}
             </button>
-            <button className="btn btn--ghost detail__buy-btn" onClick={() => { handleAddToCart(); navigate('/checkout'); }}>COMPRAR AHORA</button>
-          </div>
-
-          <div className="detail__features-box">
-            <div className="detail__feature">
-              <span className="material-symbols-outlined feature-icon">speed</span>
-              <div>
-                <h4>Carbono Ultra-Ligero</h4>
-                <p>Diseñado para una aceleración explosiva y el máximo retorno de energía en terreno firme.</p>
-              </div>
-            </div>
-            <div className="detail__feature">
-              <span className="material-symbols-outlined feature-icon">precision_manufacturing</span>
-              <div>
-                <h4>Piel GripControl</h4>
-                <p>Textura de precisión para un mando decisivo sobre el balón en todas las condiciones climáticas.</p>
-              </div>
-            </div>
+            <button className="btn-outline-gray" onClick={() => { handleAddToCart(); navigate('/checkout'); }}>
+              BUY NOW
+            </button>
           </div>
         </div>
       </section>
 
-      <section className="specs">
-        <h2 className="specs__title">ESPECIFICACIONES TÉCNICAS</h2>
-        <div className="specs__grid">
-          <div className="specs__main">
-            <div className="specs__main-content">
-              <h3>SUPERIORIDAD AERODINÁMICA</h3>
-              <p>El {displayName} presenta una parte superior sintética micro-texturizada que reduce la resistencia durante los sprints de alta velocidad.</p>
-              <ul className="specs__list">
-                <li><span className="specs__dot" /> Peso: 165g</li>
-                <li><span className="specs__dot" /> Material: KinetiSkin Pro</li>
-                <li><span className="specs__dot" /> Suela: RapidFlex TPU</li>
-              </ul>
-            </div>
-            <div className="specs__glow" />
-          </div>
-          <div className="specs__badge-card">
-            <span className="material-symbols-outlined specs__bolt">bolt</span>
-            <h3>GRADO DE ESTADIO</h3>
-            <p>Probado por atletas de élite en los entornos de mayor intensidad. Listo para el día del partido.</p>
-          </div>
+      <section className="suggested">
+        <div className="suggested__header">
+          <h2 className="suggested__title-italic">También te podría interesar</h2>
         </div>
-      </section>
 
-      <section className="reviews">
-        <div className="reviews__grid">
-          <div className="reviews__summary">
-            <h2 className="reviews__heading">COMENTARIOS DE JUGADORES</h2>
-            <div className="reviews__score-row">
-              <span className="reviews__big-score">{product?.rating || 4.8}</span>
-              <div>
-                <div className="reviews__stars">
-                  {[1,2,3,4].map(i => <span key={i} className="material-symbols-outlined filled">star</span>)}
-                  <span className="material-symbols-outlined filled">star_half</span>
-                </div>
-                <p className="reviews__count">Basado en {product?.reviews || 124} valoraciones</p>
+        <div className="suggested__grid">
+          {suggested.map(item => (
+            <div key={item.id} className="suggested__card-minimal" onClick={() => { navigate(`/product/${item.id}`); window.scrollTo(0, 0); }}>
+              <div className="suggested__card-img-wrap">
+                <img src={item.image} alt={item.name} />
+              </div>
+              <div className="suggested__card-info-minimal">
+                <h4>{item.name.toUpperCase()}</h4>
+                <p className="suggested__card-price-orange">${item.price.toFixed(2)}</p>
               </div>
             </div>
-            <div className="reviews__bars">
-              {[{n: 5, w: 85}, {n: 4, w: 10}, {n: 3, w: 3}].map(b => (
-                <div className="reviews__bar-row" key={b.n}>
-                  <span className="reviews__bar-label">{b.n}</span>
-                  <div className="reviews__bar-track"><div className="reviews__bar-fill" style={{ width: `${b.w}%` }} /></div>
-                </div>
-              ))}
-            </div>
-          </div>
-          <div className="reviews__list">
-            <div className="reviews__item">
-              <div className="reviews__item-header">
-                <div>
-                  <h4>MARCUS T.</h4>
-                  <div className="reviews__item-stars">{[1,2,3,4,5].map(i => <span key={i} className="material-symbols-outlined filled">star</span>)}</div>
-                </div>
-                <span className="reviews__item-date">HACE 2 DÍAS</span>
-              </div>
-              <p className="reviews__item-text">"Increíble ajuste. La placa de fibra de carbono se siente como si te estuviera empujando hacia adelante con cada paso."</p>
-            </div>
-            <div className="reviews__item">
-              <div className="reviews__item-header">
-                <div>
-                  <h4>SARAH K.</h4>
-                  <div className="reviews__item-stars">{[1,2,3,4].map(i => <span key={i} className="material-symbols-outlined filled">star</span>)}<span className="material-symbols-outlined">star</span></div>
-                </div>
-                <span className="reviews__item-date">HACE 1 SEMANA</span>
-              </div>
-              <p className="reviews__item-text">"El mejor toque de balón que he tenido. Un poco apretadas al principio, pero una vez que se amoldan, se sienten como parte de tu propio pie."</p>
-            </div>
-            <button className="reviews__load-more">CARGAR MÁS RESEÑAS</button>
-          </div>
+          ))}
         </div>
       </section>
     </main>

@@ -6,9 +6,10 @@ interface AuthContextType {
   user: User | null;
   isAuthenticated: boolean;
   isLoading: boolean;
-  login: (email: string, password: string) => Promise<void>;
-  logout: () => Promise<void>;
   error: string | null;
+  login: (email: string, password: string) => Promise<void>;
+  register: (firstName: string, lastName: string, email: string, password: string) => Promise<void>;
+  logout: () => Promise<void>;
 }
 
 const AuthContext = createContext<AuthContextType | null>(null);
@@ -18,12 +19,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
-  // Restaurar sesión al iniciar
+  // Restaurar sesión al iniciar (verifica expiración del JWT)
   useEffect(() => {
     const stored = authService.getStoredAuth();
-    if (stored) {
-      setUser(stored.user);
-    }
+    if (stored) setUser(stored.user);
     setIsLoading(false);
   }, []);
 
@@ -42,13 +41,28 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }
   };
 
+  const register = async (firstName: string, lastName: string, email: string, password: string) => {
+    setIsLoading(true);
+    setError(null);
+    try {
+      const { user } = await authService.register(firstName, lastName, email, password);
+      setUser(user);
+    } catch (err) {
+      const message = err instanceof Error ? err.message : 'Error al registrarse';
+      setError(message);
+      throw err;
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
   const logout = async () => {
     await authService.logout();
     setUser(null);
   };
 
   return (
-    <AuthContext.Provider value={{ user, isAuthenticated: !!user, isLoading, login, logout, error }}>
+    <AuthContext.Provider value={{ user, isAuthenticated: !!user, isLoading, error, login, register, logout }}>
       {children}
     </AuthContext.Provider>
   );

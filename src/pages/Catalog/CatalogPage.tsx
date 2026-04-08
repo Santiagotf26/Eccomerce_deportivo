@@ -17,7 +17,10 @@ export default function CatalogPage() {
   const [addedId, setAddedId] = useState<string | null>(null);
   const sizes = [7, 8, 9, 10, 11];
 
-  const sports = useMemo(() => [...new Set(products.map(p => p.sport))], [products]);
+  const sports = useMemo(() => {
+    const allSports = products.map(p => p.sport).filter((s): s is string => !!s);
+    return [...new Set(allSports)];
+  }, [products]);
 
   const filtered = useMemo(() => {
     return products.filter(p => {
@@ -116,11 +119,30 @@ export default function CatalogPage() {
             </div>
           ) : (
             <div className="product-grid">
-              {filtered.map(product => (
-                <div className="product-card" key={product.id} onClick={() => navigate(`/product/${product.id}`)}>
-                  <div className={`product-card__image-wrap ${product.badge?.includes('Oferta') ? 'product-card__image-wrap--sale' : ''}`}>
-                    <img src={product.image} alt={product.name} className="product-card__img" />
-                    {product.badge && (
+              {filtered.map(product => {
+                const isOutOfStock = product.variants && product.variants.length > 0 
+                  ? product.variants.reduce((sum, v) => sum + (Number(v.stock) || 0), 0) <= 0 
+                  : false;
+
+                return (
+                <div 
+                  className={`product-card ${isOutOfStock ? 'product-card--out-of-stock' : ''}`} 
+                  key={product.id} 
+                  onClick={() => !isOutOfStock && navigate(`/product/${product.id}`)}
+                  style={{ cursor: isOutOfStock ? 'default' : 'pointer' }}
+                >
+                  <div className={`product-card__image-wrap ${product.badge?.includes('Oferta') ? 'product-card__image-wrap--sale' : ''}`} style={{ overflow: 'hidden' }}>
+                    {isOutOfStock && (
+                      <div className="product-card__out-of-stock-ribbon">
+                        Agotado
+                      </div>
+                    )}
+                    {product.image ? (
+                      <img src={product.image} alt={product.name} className="product-card__img" style={{ filter: isOutOfStock ? 'grayscale(100%) opacity(0.6)' : 'none' }} />
+                    ) : (
+                      <div className="product-card__img" />
+                    )}
+                    {product.badge && !isOutOfStock && (
                       <div className={`product-card__badge ${product.badge.includes('Oferta') ? 'product-card__badge--sale' : ''}`}>{product.badge}</div>
                     )}
                   </div>
@@ -128,6 +150,11 @@ export default function CatalogPage() {
                     <div className="product-card__meta">
                       <p className="product-card__category">{product.sport} • {product.category}</p>
                       <h3 className="product-card__name">{product.name}</h3>
+                      {product.shortDescription && (
+                        <p style={{ fontSize: '0.8rem', color: 'var(--on-surface-variant)', marginTop: '0.3rem', marginBottom: '0.5rem', display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical', overflow: 'hidden' }}>
+                          {product.shortDescription}
+                        </p>
+                      )}
                       <div className="product-card__rating">
                         <span className="material-symbols-outlined filled star-icon">star</span>
                         <span className="product-card__rating-text">{product.rating} ({product.reviews} reseñas)</span>
@@ -138,12 +165,22 @@ export default function CatalogPage() {
                       <span className="product-card__price">${product.price.toFixed(2)}</span>
                     </div>
                   </div>
-                  <button className={`product-card__add-btn ${addedId === product.id ? 'product-card__add-btn--added' : ''}`} onClick={(e) => handleAddToCart(e, product)}>
-                    <span className="material-symbols-outlined">{addedId === product.id ? 'check' : 'shopping_bag'}</span>
-                    {addedId === product.id ? '¡Añadido!' : 'Añadir al Carrito'}
+                  <button 
+                    className={`product-card__add-btn ${addedId === product.id ? 'product-card__add-btn--added' : ''} ${isOutOfStock ? 'product-card__add-btn--disabled' : ''}`} 
+                    onClick={(e) => !isOutOfStock && handleAddToCart(e, product)}
+                    disabled={isOutOfStock}
+                    style={{
+                      opacity: isOutOfStock ? 0.5 : 1,
+                      cursor: isOutOfStock ? 'not-allowed' : 'pointer',
+                      background: isOutOfStock ? 'var(--surface-container-highest)' : ''
+                    }}
+                  >
+                    <span className="material-symbols-outlined">{addedId === product.id ? 'check' : isOutOfStock ? 'block' : 'shopping_bag'}</span>
+                    {addedId === product.id ? '¡Añadido!' : isOutOfStock ? 'Extinto / Agotado' : 'Añadir al Carrito'}
                   </button>
                 </div>
-              ))}
+                );
+              })}
               {filtered.length === 0 && !loading && (
                 <div className="catalog__empty">
                   <span className="material-symbols-outlined" style={{ fontSize: '3rem', color: 'var(--on-surface-variant)' }}>search_off</span>

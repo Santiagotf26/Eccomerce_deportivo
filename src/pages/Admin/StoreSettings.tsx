@@ -1,6 +1,7 @@
 import { useState, useEffect, type FormEvent } from 'react';
 import type { StoreInfo } from '../../types';
 import './StoreSettings.css';
+import Swal from 'sweetalert2';
 
 const STORAGE_KEY = 'kinetic_store_info';
 
@@ -15,7 +16,6 @@ const DEFAULT_INFO: StoreInfo = {
 
 export default function StoreSettings() {
   const [form, setForm] = useState<StoreInfo>(DEFAULT_INFO);
-  const [saved, setSaved] = useState(false);
 
   useEffect(() => {
     const stored = localStorage.getItem(STORAGE_KEY);
@@ -25,13 +25,19 @@ export default function StoreSettings() {
   const handleSubmit = (e: FormEvent) => {
     e.preventDefault();
     localStorage.setItem(STORAGE_KEY, JSON.stringify(form));
-    setSaved(true);
-    setTimeout(() => setSaved(false), 3000);
+    
+    Swal.fire({
+      title: 'Configuración guardada',
+      text: 'Los cambios se han aplicado correctamente.',
+      icon: 'success',
+      confirmButtonColor: '#3b82f6',
+      timer: 2000,
+      showConfirmButton: false
+    });
   };
 
   const update = (field: keyof StoreInfo, value: string) => {
     setForm(prev => ({ ...prev, [field]: value }));
-    setSaved(false);
   };
 
   return (
@@ -83,12 +89,6 @@ export default function StoreSettings() {
         </div>
 
         <div className="store-settings__actions">
-          {saved && (
-            <span className="store-settings__saved">
-              <span className="material-symbols-outlined">check_circle</span>
-              Guardado exitosamente
-            </span>
-          )}
           <button type="submit" className="store-settings__save-btn">
             <span className="material-symbols-outlined">save</span>
             Guardar Cambios

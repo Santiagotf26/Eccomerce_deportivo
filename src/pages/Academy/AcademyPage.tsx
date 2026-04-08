@@ -1,8 +1,40 @@
-import { useState } from 'react';
+import { useState, type FormEvent } from 'react';
+import { api } from '../../lib/apiClient';
 import './AcademyPage.css';
 
 export default function AcademyPage() {
   const [openFaq, setOpenFaq] = useState<number | null>(0);
+
+  const [formData, setFormData] = useState({ name: '', dob: '', email: '', level: 'Descubrimiento (6-9)', notes: '' });
+  const [enrolling, setEnrolling] = useState(false);
+  const [enrollDone, setEnrollDone] = useState(false);
+  const [enrollError, setEnrollError] = useState('');
+
+  const handleEnroll = async (e: FormEvent) => {
+    e.preventDefault();
+    setEnrollError('');
+    if (!formData.name || !formData.dob || !formData.email) {
+      setEnrollError('Por favor completa los campos obligatorios.');
+      return;
+    }
+    setEnrolling(true);
+    try {
+      await api.post('/academy/enroll', {
+        prospect_name: formData.name,
+        birth_date: new Date(formData.dob).toISOString(),
+        parent_email: formData.email,
+        level: formData.level,
+        notes: formData.notes
+      });
+      setEnrollDone(true);
+      setFormData({ name: '', dob: '', email: '', level: 'Descubrimiento (6-9)', notes: '' });
+      setTimeout(() => setEnrollDone(false), 5000);
+    } catch (err: any) {
+      setEnrollError(err.message || 'Error al enviar inscripción.');
+    } finally {
+      setEnrolling(false);
+    }
+  };
 
   const faqs = [
     { q: '¿Qué equipamiento debo traer?', a: 'Los jugadores deben traer botas, espinilleras, una botella de agua marcada y una actitud positiva. Las equipaciones de entrenamiento se proporcionan tras la inscripción exitosa en el trimestre completo.' },
@@ -191,35 +223,41 @@ export default function AcademyPage() {
             <h2 className="enrollment__title">ÚNETE A LA ACADEMIA</h2>
             <p className="enrollment__subtitle">Completa el formulario a continuación para comenzar tu sesión de prueba.</p>
           </div>
-          <form className="enrollment__form" onSubmit={(e) => e.preventDefault()}>
+          <form className="enrollment__form" onSubmit={handleEnroll}>
             <div className="enrollment__row">
               <div className="enrollment__field">
-                <label>Nombre del Atleta</label>
-                <input type="text" placeholder="Nombre Completo" />
+                <label>Nombre Completo del Atleta *</label>
+                <input type="text" placeholder="Ej. Juan Pérez" value={formData.name} onChange={e => setFormData(d => ({ ...d, name: e.target.value }))} />
               </div>
               <div className="enrollment__field">
-                <label>Fecha de Nacimiento</label>
-                <input type="date" />
+                <label>Fecha de Nacimiento *</label>
+                <input type="date" value={formData.dob} onChange={e => setFormData(d => ({ ...d, dob: e.target.value }))} />
               </div>
               <div className="enrollment__field">
-                <label>Correo del Padre/Tutor</label>
-                <input type="email" placeholder="email@ejemplo.com" />
+                <label>Correo del Padre/Tutor *</label>
+                <input type="email" placeholder="email@ejemplo.com" value={formData.email} onChange={e => setFormData(d => ({ ...d, email: e.target.value }))} />
               </div>
               <div className="enrollment__field">
                 <label>Nivel de Entrenamiento</label>
-                <select>
-                  <option>Descubrimiento (6-9)</option>
-                  <option>Desarrollo (10-13)</option>
-                  <option>Rendimiento (14-18)</option>
+                <select value={formData.level} onChange={e => setFormData(d => ({ ...d, level: e.target.value }))}>
+                  <option value="Descubrimiento (6-9)">Descubrimiento (6-9)</option>
+                  <option value="Desarrollo (10-13)">Desarrollo (10-13)</option>
+                  <option value="Rendimiento (14-18)">Rendimiento (14-18)</option>
                 </select>
               </div>
             </div>
             <div className="enrollment__field">
               <label>Experiencia Previa / Notas Médicas</label>
-              <textarea placeholder="Cuéntanos sobre tu trayectoria en el fútbol..." rows={4} />
+              <textarea placeholder="Cuéntanos sobre tu trayectoria en el fútbol..." rows={4} value={formData.notes} onChange={e => setFormData(d => ({ ...d, notes: e.target.value }))} />
             </div>
+
+            {enrollError && <p style={{ color: 'var(--error)', marginBottom: '1rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}><span className="material-symbols-outlined">error</span> {enrollError}</p>}
+            {enrollDone && <p style={{ color: '#00c864', marginBottom: '1rem', display: 'flex', alignItems: 'center', gap: '0.5rem', background: 'rgba(0,200,100,0.1)', padding: '1rem', borderRadius: '8px' }}><span className="material-symbols-outlined">check_circle</span> Solicitud enviada con éxito. Nos pondremos en contacto pronto.</p>}
+
             <div className="enrollment__submit-wrap">
-              <button type="submit" className="btn btn--primary btn--lg enrollment__submit-btn">ENVIAR INSCRIPCIÓN</button>
+              <button type="submit" className="btn btn--primary btn--lg enrollment__submit-btn" disabled={enrolling || enrollDone}>
+                {enrolling ? 'Enviando...' : enrollDone ? 'Inscripción Enviada ✓' : 'ENVIAR INSCRIPCIÓN'}
+              </button>
             </div>
           </form>
         </div>

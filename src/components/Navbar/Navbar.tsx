@@ -1,13 +1,11 @@
 import { useState } from 'react';
 import { NavLink, useNavigate } from 'react-router-dom';
 import { useCart } from '../../context/CartContext';
-import { useAuth } from '../../context/AuthContext';
 import './Navbar.css';
 
 export default function Navbar() {
   const navigate = useNavigate();
   const { totalItems } = useCart();
-  const { isAuthenticated } = useAuth();
   const [menuOpen, setMenuOpen] = useState(false);
 
   const closeMenu = () => setMenuOpen(false);
@@ -22,12 +20,6 @@ export default function Navbar() {
             <NavLink to="/academy" className={({ isActive }) => isActive ? 'navbar__link navbar__link--active' : 'navbar__link'} onClick={closeMenu}>Escuela de Fútbol</NavLink>
             <NavLink to="/#about" className="navbar__link" onClick={closeMenu}>Nosotros</NavLink>
             <NavLink to="/#contact" className="navbar__link" onClick={closeMenu}>Contacto</NavLink>
-            {isAuthenticated && (
-              <NavLink to="/admin" className={({ isActive }) => isActive ? 'navbar__link navbar__link--admin navbar__link--active' : 'navbar__link navbar__link--admin'} onClick={closeMenu}>
-                <span className="material-symbols-outlined" style={{ fontSize: '1rem', marginRight: '4px' }}>admin_panel_settings</span>
-                Admin
-              </NavLink>
-            )}
           </div>
         </div>
         <div className="navbar__actions">
@@ -38,7 +30,7 @@ export default function Navbar() {
           <button
             className="navbar__icon-btn"
             aria-label="Cuenta"
-            onClick={() => navigate(isAuthenticated ? '/admin' : '/login')}
+            onClick={() => navigate('/login')}
           >
             <span className="material-symbols-outlined">account_circle</span>
           </button>

@@ -1,25 +1,30 @@
 import { useProducts } from '../../hooks/useProducts';
 import { useCategories } from '../../hooks/useCategories';
+import { useOrders } from '../../hooks/useOrders';
 import './Dashboard.css';
 
 export default function Dashboard() {
   const { products } = useProducts();
   const { categories } = useCategories();
+  const { orders, loading } = useOrders();
 
-  const totalRevenue = products.reduce((sum, p) => sum + p.price, 0);
+  if (loading) return <div className="loading-container">Inyectando datos KINETIC...</div>;
+
+  const totalRevenue = (orders || []).reduce((sum, o) => sum + (o.total_amount || 0), 0);
+  
   const stats = [
     { icon: 'inventory_2', label: 'Productos', value: products.length, color: 'var(--primary)' },
     { icon: 'category', label: 'Categorías', value: categories.length, color: 'var(--tertiary)' },
-    { icon: 'shopping_cart', label: 'Pedidos', value: 24, color: '#2563eb' },
-    { icon: 'payments', label: 'Ingresos', value: `$${totalRevenue.toLocaleString('es-CO', { minimumFractionDigits: 2 })}`, color: '#16a34a' },
+    { icon: 'shopping_cart', label: 'Pedidos Reales', value: (orders || []).length, color: '#2563eb' },
+    { icon: 'payments', label: 'Ingresos KINETIC', value: `$${totalRevenue.toLocaleString('es-CO', { minimumFractionDigits: 0 })}`, color: '#16a34a' },
   ];
 
-  const recentActivity = [
-    { icon: 'add_circle', text: 'Nuevo producto "Vortex Elite FG" agregado', time: 'Hace 2 horas', color: 'var(--primary)' },
-    { icon: 'edit', text: 'Categoría "Calzado" actualizada', time: 'Hace 5 horas', color: 'var(--tertiary)' },
-    { icon: 'person_add', text: 'Inscripción nueva en la academia', time: 'Hace 1 día', color: '#2563eb' },
-    { icon: 'shopping_bag', text: 'Pedido #1024 procesado', time: 'Hace 1 día', color: '#16a34a' },
-  ];
+  const recentActivity = (orders || []).slice(0, 4).map(order => ({
+    icon: 'shopping_bag',
+    text: `Pedido #${order.order_number} por ${order.user?.first_name || order.customer_name || 'Invitado'}`,
+    time: order.created_at ? new Date(order.created_at).toLocaleDateString() : 'Reciente',
+    color: '#16a34a'
+  }));
 
   return (
     <div className="dashboard">

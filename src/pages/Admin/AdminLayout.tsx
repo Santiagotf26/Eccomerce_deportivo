@@ -1,18 +1,33 @@
 import { NavLink, Outlet, useNavigate } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
 import './AdminLayout.css';
+import Swal from 'sweetalert2';
 
 export default function AdminLayout() {
   const { user, logout } = useAuth();
   const navigate = useNavigate();
 
   const handleLogout = async () => {
-    await logout();
-    navigate('/');
+    const { isConfirmed } = await Swal.fire({
+      title: '¿Cerrar sesión?',
+      text: '¿Estás seguro de que quieres salir del panel de administración?',
+      icon: 'question',
+      showCancelButton: true,
+      confirmButtonColor: '#3b82f6',
+      cancelButtonColor: '#6b7280',
+      confirmButtonText: 'Sí, salir',
+      cancelButtonText: 'Cancelar'
+    });
+
+    if (isConfirmed) {
+      await logout();
+      navigate('/');
+    }
   };
 
   const navItems = [
     { to: '/admin', icon: 'dashboard', label: 'Dashboard', end: true },
+    { to: '/admin/orders', icon: 'shopping_cart', label: 'Pedidos', end: false },
     { to: '/admin/products', icon: 'inventory_2', label: 'Productos', end: false },
     { to: '/admin/categories', icon: 'category', label: 'Categorías', end: false },
     { to: '/admin/settings', icon: 'settings', label: 'Configuración', end: false },
