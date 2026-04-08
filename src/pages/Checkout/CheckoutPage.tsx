@@ -1,9 +1,14 @@
 import { useState, useEffect, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { loadStripe } from '@stripe/stripe-js';
+import { Elements } from '@stripe/react-stripe-js';
 import { useCart } from '../../context/CartContext';
 import { useAuth } from '../../context/AuthContext';
 import { api } from '../../lib/apiClient';
+import StripePaymentForm from './StripePaymentForm';
 import './CheckoutPage.css';
+
+const stripePromise = loadStripe(import.meta.env.VITE_STRIPE_PUBLISHABLE_KEY);
 
 // ==========================================
 // SUB-COMPONENTES MODULARES
@@ -51,6 +56,7 @@ export default function CheckoutPage() {
   const [paymentPhase, setPaymentPhase] = useState<'idle' | 'validating' | 'processing' | 'success' | 'error'>('idle');
   const [orderError, setOrderError] = useState('');
   const [showSuccessAlert, setShowSuccessAlert] = useState(false);
+  const [clientSecret, setClientSecret] = useState('');
 
   // Formulario y Validaciones
   const [customerInfo, setCustomerInfo] = useState({
@@ -63,7 +69,6 @@ export default function CheckoutPage() {
   });
 
   const [errors, setErrors] = useState<Record<string, string>>({});
-  const [paymentMethod, setPaymentMethod] = useState<'card' | 'paypal' | 'apple'>('card');
 
   // Cálculos
   const taxes = totalPrice * 0.04;
@@ -100,16 +105,20 @@ export default function CheckoutPage() {
     );
   }
 
-  const handlePlaceOrder = async () => {
+  const handlePreparePayment = async () => {
     setOrderError('');
     setPaymentPhase('validating');
 
     try {
-      await new Promise(r => setTimeout(r, 1200));
-      
+      // Filtrar ítems que no tengan variante para evitar errores en el backend
+      const validItems = items.filter(i => i.variant?.id);
+      if (validItems.length === 0) {
+        throw new Error('Tu carrito no tiene productos válidos. Asegúrate de seleccionar talla y color.');
+      }
+
       const payload = { 
-        items: items.map(i => ({ 
-          product_variant_id: i.variant?.id ?? i.product.id, 
+        items: validItems.map(i => ({ 
+          product_variant_id: i.variant!.id, 
           quantity: i.quantity 
         })),
         customer_name: customerInfo.name,
@@ -122,26 +131,46 @@ export default function CheckoutPage() {
         }
       };
 
-      setPaymentPhase('processing');
       const endpoint = isAuthenticated ? '/orders' : '/orders/guest';
-      await api.post(endpoint, payload);
+      const orderRes = (await api.post(endpoint, payload)) as any;
+      const newOrderId = orderRes.id;
 
-      await new Promise(r => setTimeout(r, 1500));
+      setPaymentPhase('processing');
+      // Crear el Payment Intent en Stripe
+      const intentRes = (await api.post('/orders/stripe/create-intent', {
+        orderId: newOrderId,
+      })) as any;
+      setClientSecret(intentRes.clientSecret);
       
-      setPaymentPhase('success');
-      setShowSuccessAlert(true);
-      clearCart();
-
-      // Redirección después de mostrar el éxito
-      setTimeout(() => {
-        navigate('/');
-      }, 6000);
-      
+      setStep(3);
+      setPaymentPhase('idle');
     } catch (e: any) {
+      console.error('Error in handlePreparePayment:', e);
       setPaymentPhase('error');
-      setOrderError(e.message || 'Error en la transacción. Revisa los datos.');
-      setTimeout(() => setPaymentPhase('idle'), 3000);
+      
+      // Extraer mensaje de error de forma robusta
+      let msg = 'Error al preparar el pedido. Verifica el stock.';
+      
+      if (e.message) {
+        msg = Array.isArray(e.message) ? e.message.join(', ') : e.message;
+      }
+      
+      if (typeof e === 'string') msg = e;
+      
+      setOrderError(msg);
+      setTimeout(() => setPaymentPhase('idle'), 5000);
     }
+  };
+
+  const handlePaymentSuccess = async () => {
+    setPaymentPhase('success');
+    setShowSuccessAlert(true);
+    clearCart();
+
+    // Redirección después de mostrar el éxito
+    setTimeout(() => {
+      navigate('/');
+    }, 6000);
   };
 
   return (
@@ -173,7 +202,7 @@ export default function CheckoutPage() {
               <h2 className="checkout__section-title">Revisión de Equipo ({items.length})</h2>
               <div className="checkout__items">
                 {items.map(item => (
-                  <div className="cart-item" key={item.product.id}>
+                  <div className="cart-item" key={item.variant?.id || item.product.id}>
                     <div className="cart-item__image">
                       <img src={item.product.image} alt={item.product.name} />
                     </div>
@@ -185,11 +214,11 @@ export default function CheckoutPage() {
                       {item.variant && <p className="cart-item__tag">Talla {item.variant.size} · {item.variant.color}</p>}
                       <div className="cart-item__controls">
                         <div className="quantity-control">
-                          <button onClick={() => updateQuantity(item.product.id, item.quantity - 1)}><span className="material-symbols-outlined qty-icon">remove</span></button>
+                          <button onClick={() => updateQuantity(item.product.id, item.quantity - 1, item.variant?.id)}><span className="material-symbols-outlined qty-icon">remove</span></button>
                           <span className="quantity-control__value">{item.quantity}</span>
-                          <button onClick={() => updateQuantity(item.product.id, item.quantity + 1)}><span className="material-symbols-outlined qty-icon">add</span></button>
+                          <button onClick={() => updateQuantity(item.product.id, item.quantity + 1, item.variant?.id)}><span className="material-symbols-outlined qty-icon">add</span></button>
                         </div>
-                        <button className="cart-item__remove" onClick={() => removeFromCart(item.product.id)}>
+                        <button className="cart-item__remove" onClick={() => removeFromCart(item.product.id, item.variant?.id)}>
                           <span className="material-symbols-outlined">delete</span>
                         </button>
                       </div>
@@ -266,7 +295,7 @@ export default function CheckoutPage() {
                 <button 
                   className="btn btn--primary btn--lg" 
                   disabled={!isStep2Valid} 
-                  onClick={() => setStep(3)}
+                  onClick={handlePreparePayment}
                 >
                   Confirmar Envío <span className="material-symbols-outlined">arrow_forward</span>
                 </button>
@@ -278,41 +307,27 @@ export default function CheckoutPage() {
           {step === 3 && (
             <div className="checkout-card fade-in">
               <h2 className="checkout__section-title">Método de Impulso</h2>
-              <div className="payment-methods">
-                <div className={`payment-method ${paymentMethod === 'card' ? 'payment-method--active' : ''}`} onClick={() => setPaymentMethod('card')}>
-                  <span className="material-symbols-outlined payment-method__icon">credit_card</span>
-                  <span className="payment-method__label">Tarjeta</span>
-                </div>
-                <div className={`payment-method ${paymentMethod === 'paypal' ? 'payment-method--active' : ''}`} onClick={() => setPaymentMethod('paypal')}>
-                  <span className="material-symbols-outlined payment-method__icon">account_balance_wallet</span>
-                  <span className="payment-method__label">PayPal</span>
-                </div>
-              </div>
-
-              {paymentMethod === 'card' && (
-                <div className="card-form fade-in" style={{ marginTop: '2rem' }}>
-                  <div className="form-field">
-                    <label className="form-field__label">Número de Tarjeta</label>
-                    <input type="text" className="checkout-input" placeholder="0000 0000 0000 0000" />
-                  </div>
-                  <div className="form-grid" style={{ marginTop: '1rem' }}>
-                    <div className="form-field">
-                      <label className="form-field__label">Expiración</label>
-                      <input type="text" className="checkout-input" placeholder="MM/AA" />
-                    </div>
-                    <div className="form-field">
-                      <label className="form-field__label">CVV</label>
-                      <input type="text" className="checkout-input" placeholder="***" />
-                    </div>
-                  </div>
+              
+              {clientSecret ? (
+                <Elements stripe={stripePromise} options={{ clientSecret }}>
+                  <StripePaymentForm 
+                    onSuccess={handlePaymentSuccess}
+                    onError={(msg) => {
+                      setOrderError(msg);
+                      setPaymentPhase('error');
+                      setTimeout(() => setPaymentPhase('idle'), 3000);
+                    }}
+                  />
+                </Elements>
+              ) : (
+                <div className="checkout__loading">
+                  <div className="payment-overlay__loader" />
+                  <p>Iniciando pasarela de pago segura...</p>
                 </div>
               )}
 
-              <div style={{ marginTop: '2rem', display: 'flex', justifyContent: 'space-between' }}>
+              <div style={{ marginTop: '2rem', display: 'flex', justifyContent: 'flex-start' }}>
                 <button className="btn btn--ghost" onClick={() => setStep(2)}>Regresar</button>
-                <button className="btn btn--primary btn--lg" onClick={handlePlaceOrder}>
-                  Realizar Pago <span className="material-symbols-outlined">bolt</span>
-                </button>
               </div>
             </div>
           )}

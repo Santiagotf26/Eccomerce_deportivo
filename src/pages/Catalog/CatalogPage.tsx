@@ -39,7 +39,7 @@ export default function CatalogPage() {
 
   const handleAddToCart = (e: React.MouseEvent, product: typeof products[0]) => {
     e.stopPropagation();
-    
+
     // Si el producto tiene variantes, redirigimos al detalle para que el usuario elija una talla/color
     if (product.variants && product.variants.length > 0) {
       navigate(`/product/${product.id}`);
@@ -111,7 +111,7 @@ export default function CatalogPage() {
                 <img src="https://lh3.googleusercontent.com/aida-public/AB6AXuD2Gy26KZFxzQbwuDbNdNEWfDUQDOlNFKTsuGoJ1-DmzPdZx6onbvsreLGtpadTz_RZuLIABnPm3-wq9u2_h6wXiAsB10IhDwF4BK7YrVIs-SWfsjluJCYvMMCfTQ3UxQ1rxpnlgm7K4nTX2LWY0eYmZJ4W2mgsBdnmi-JKhf9QczkolNc9VOuJYqgAUt7d4FsOmK1KiA3vbU0pdh92nEDSs6CD7ddDMgXxAqZT3YZebKD-MKGtN3ccTv1aPT1puarVfXMbIlIg27U" alt="" />
               </div>
               <div className="sidebar-banner__content">
-                <h4 className="sidebar-banner__title">ACADEMIA<br/>KINETIC</h4>
+                <h4 className="sidebar-banner__title">ACADEMIA<br />KINETIC</h4>
                 <p className="sidebar-banner__desc">Domina el campo con entrenamiento de élite. Inscripciones abiertas para primavera 2024.</p>
                 <button className="sidebar-banner__btn" onClick={() => navigate('/academy')}>Postular Ahora</button>
               </div>
@@ -127,73 +127,73 @@ export default function CatalogPage() {
           ) : (
             <div className="product-grid">
               {filtered.map(product => {
-                const isOutOfStock = product.variants && product.variants.length > 0 
-                  ? product.variants.reduce((sum, v) => sum + (Number(v.stock) || 0), 0) <= 0 
+                const isOutOfStock = product.variants && product.variants.length > 0
+                  ? product.variants.reduce((sum, v) => sum + (Number(v.stock) || 0), 0) <= 0
                   : false;
 
                 return (
-                <div 
-                  className={`product-card ${isOutOfStock ? 'product-card--out-of-stock' : ''}`} 
-                  key={product.id} 
-                  onClick={() => !isOutOfStock && navigate(`/product/${product.id}`)}
-                  style={{ cursor: isOutOfStock ? 'default' : 'pointer' }}
-                >
-                  <div className={`product-card__image-wrap ${product.badge?.includes('Oferta') ? 'product-card__image-wrap--sale' : ''}`} style={{ overflow: 'hidden' }}>
-                    {isOutOfStock && (
-                      <div className="product-card__out-of-stock-ribbon">
-                        Agotado
-                      </div>
-                    )}
-                    {product.image ? (
-                      <img src={product.image} alt={product.name} className="product-card__img" style={{ filter: isOutOfStock ? 'grayscale(100%) opacity(0.6)' : 'none' }} />
-                    ) : (
-                      <div className="product-card__img" />
-                    )}
-                    {product.badge && !isOutOfStock && (
-                      <div className={`product-card__badge ${product.badge.includes('Oferta') ? 'product-card__badge--sale' : ''}`}>{product.badge}</div>
-                    )}
-                  </div>
-                  <div className="product-card__info">
-                    <div className="product-card__meta">
-                      <p className="product-card__category">{product.sport} • {product.category}</p>
-                      <h3 className="product-card__name">{product.name}</h3>
-                      {product.shortDescription && (
-                        <p style={{ fontSize: '0.8rem', color: 'var(--on-surface-variant)', marginTop: '0.3rem', marginBottom: '0.5rem', display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical', overflow: 'hidden' }}>
-                          {product.shortDescription}
-                        </p>
-                      )}
-                      <div className="product-card__rating">
-                        <span className="material-symbols-outlined filled star-icon">star</span>
-                        <span className="product-card__rating-text">{product.rating} ({product.reviews} reseñas)</span>
-                      </div>
-                    </div>
-                    <div className="product-card__price-wrap">
-                      {product.originalPrice && <span className="product-card__original-price">${product.originalPrice.toFixed(2)}</span>}
-                      <span className="product-card__price">${product.price.toFixed(2)}</span>
-                    </div>
-                  </div>
-                  <button 
-                    className={`product-card__add-btn ${addedId === product.id ? 'product-card__add-btn--added' : ''} ${isOutOfStock ? 'product-card__add-btn--disabled' : ''}`} 
-                    onClick={(e) => !isOutOfStock && handleAddToCart(e, product)}
-                    disabled={isOutOfStock}
-                    style={{
-                      opacity: isOutOfStock ? 0.5 : 1,
-                      cursor: isOutOfStock ? 'not-allowed' : 'pointer',
-                      background: isOutOfStock ? 'var(--surface-container-highest)' : ''
-                    }}
+                  <div
+                    className={`product-card ${isOutOfStock ? 'product-card--out-of-stock' : ''}`}
+                    key={product.id}
+                    onClick={() => !isOutOfStock && navigate(`/product/${product.id}`)}
+                    style={{ cursor: isOutOfStock ? 'default' : 'pointer' }}
                   >
-                    <span className="material-symbols-outlined">
-                      {addedId === product.id ? 'check' : isOutOfStock ? 'block' : (product.variants?.length ?? 0) > 0 ? 'visibility' : 'shopping_bag'}
-                    </span>
-                    {addedId === product.id 
-                      ? '¡Añadido!' 
-                      : isOutOfStock 
-                        ? 'Extinto / Agotado' 
-                        : (product.variants?.length ?? 0) > 0 
-                          ? 'Ver producto' 
-                          : 'Añadir al Carrito'}
-                  </button>
-                </div>
+                    <div className={`product-card__image-wrap ${product.badge?.includes('Oferta') ? 'product-card__image-wrap--sale' : ''}`} style={{ overflow: 'hidden' }}>
+                      {isOutOfStock && (
+                        <div className="product-card__out-of-stock-ribbon">
+                          Agotado
+                        </div>
+                      )}
+                      {product.image ? (
+                        <img src={product.image} alt={product.name} className="product-card__img" style={{ filter: isOutOfStock ? 'grayscale(100%) opacity(0.6)' : 'none' }} />
+                      ) : (
+                        <div className="product-card__img" />
+                      )}
+                      {product.badge && !isOutOfStock && (
+                        <div className={`product-card__badge ${product.badge.includes('Oferta') ? 'product-card__badge--sale' : ''}`}>{product.badge}</div>
+                      )}
+                    </div>
+                    <div className="product-card__info">
+                      <div className="product-card__meta">
+                        <p className="product-card__category">{product.sport} • {product.category}</p>
+                        <h3 className="product-card__name">{product.name}</h3>
+                        {product.shortDescription && (
+                          <p style={{ fontSize: '0.8rem', color: 'var(--on-surface-variant)', marginTop: '0.3rem', marginBottom: '0.5rem', display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical', overflow: 'hidden' }}>
+                            {product.shortDescription}
+                          </p>
+                        )}
+                        <div className="product-card__rating">
+                          <span className="material-symbols-outlined filled star-icon">star</span>
+                          <span className="product-card__rating-text">{product.rating} ({product.reviews} reseñas)</span>
+                        </div>
+                      </div>
+                      <div className="product-card__price-wrap">
+                        {product.originalPrice && <span className="product-card__original-price">${product.originalPrice.toFixed(2)}</span>}
+                        <span className="product-card__price">${product.price.toFixed(2)}</span>
+                      </div>
+                    </div>
+                    <button
+                      className={`product-card__add-btn ${addedId === product.id ? 'product-card__add-btn--added' : ''} ${isOutOfStock ? 'product-card__add-btn--disabled' : ''}`}
+                      onClick={(e) => !isOutOfStock && handleAddToCart(e, product)}
+                      disabled={isOutOfStock}
+                      style={{
+                        opacity: isOutOfStock ? 0.5 : 1,
+                        cursor: isOutOfStock ? 'not-allowed' : 'pointer',
+                        background: isOutOfStock ? 'var(--surface-container-highest)' : ''
+                      }}
+                    >
+                      <span className="material-symbols-outlined">
+                        {addedId === product.id ? 'check' : isOutOfStock ? 'block' : (product.variants?.length ?? 0) > 0 ? 'visibility' : 'shopping_bag'}
+                      </span>
+                      {addedId === product.id
+                        ? '¡Añadido!'
+                        : isOutOfStock
+                          ? 'Agotado'
+                          : (product.variants?.length ?? 0) > 0
+                            ? 'Ver producto'
+                            : 'Añadir al Carrito'}
+                    </button>
+                  </div>
                 );
               })}
               {filtered.length === 0 && !loading && (
